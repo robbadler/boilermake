@@ -27,6 +27,13 @@
 #       instances of "$" within them need to be escaped with a second "$" to
 #       accomodate the double expansion that occurs when eval is invoked.
 
+#disable dumb lex/yacc rules
+%.c:%.y
+%.c:%.l
+
+# QUIET is to make clean output
+QUIET := @
+
 # ADD_CLEAN_RULE - Parameterized "function" that adds a new rule and phony
 #   target for cleaning the specified target (removing its build-generated
 #   files).
@@ -34,10 +41,14 @@
 #   USE WITH EVAL
 #
 define ADD_CLEAN_RULE
-    clean: clean_${1}
-    .PHONY: clean_${1}
-    clean_${1}:
-	$$(strip rm -f ${TARGET_DIR}/${1} $${${1}_OBJS:%.o=%.[doP]})
+clean: clean_${1}
+.PHONY: clean_${1}
+clean_${1}:
+	$$(strip rm -f \
+	  ${${1}_TGTDIR}/${1} \
+	  ${${1}_EXPORTDIR}/${1} \
+	  ${${1}_TGTDIR}/{*_info,*.py,*.pyc} \
+	  $${${1}_OBJS:%.o=%.[doP]})
 	$${${1}_POSTCLEAN}
 endef
 
@@ -52,8 +63,144 @@ endef
 #   USE WITH EVAL
 #
 define ADD_OBJECT_RULE
+${1}/%.o: $(join ${ROOT}/,${2})
+	$(QUIET)${3}
+endef
+#$(eval $(info 1=${1} 2=${2}))
+define ADD_OBJECT_RULE2
 ${1}/%.o: ${2}
-	${3}
+	$(QUIET)${3}
+#$(wildcard ${ROOT}/*${VCO})/%.o : $(join $(wildcard ${ROOT}/*src)/,${2})
+#	$(QUIET)${3}
+endef
+
+# ADD_MOC_RULE - Parameterized "function" that adds a pattern rule for
+#   generating cpp files from QOBJECT class headers. The 2nd argument is the header
+#   used to generate the file. The third argument contains the MOC rule macro
+#
+#   USE WITH EVAL
+#
+define ADD_MOC_RULE
+moc_%.cpp: ${2}
+	$(QUIET)${3}
+endef
+
+# SPECIFIC_MOC_RULE - Parameterized "function" that adds a specific rule for
+#   generating cpp files from QOBJECT class headers. The 2nd argument is the header
+#   used to generate the file. The third argument contains the MOC rule macro
+#
+#   USE WITH EVAL
+#
+define SPECIFIC_MOC_RULE
+%moc_$(basename $(notdir ${2})).cpp: ${2}
+	$(QUIET)${3}
+endef
+
+# ADD_LEX_RULE
+#
+#   ADD_LEX_RULE <tgt> <lex_src>.l <cmd>
+#   USE WITH EVAL
+#
+define ADD_LEX_RULE
+%_l.cxx: ${2}
+	$(QUIET)${3}
+
+clean_${1} : clean_$(strip ${1})_$(strip ${2})
+clean_$(strip ${1})_$(strip ${2}) :
+	rm -f $(addsuffix *_l.cxx,$(addsuffix /,${${1}_SRCDIRS}))
+endef
+
+# ADD_YACC_DEPEND - Parameterized "function" that sets up the dependency on a 
+#   YACC (bison) generated file. They may be cleaned up correctly, and only 
+#   generated once instead of repeatedly for each dep file change.
+#
+#   ADD_YACC_DEPEND <src>.o <yacc_gen>_p.o <yacc_gen>_p.h <yacc_gen>_p.cxx <TGT>
+#   USE WITH EVAL
+#
+#$(strip ${1}):|$(strip ${3}) $(strip ${4})
+#$(eval $(info ADD_YACC_DEP 1=${1} 2=${2} 3=${3} 4=${4} 5=${5}))
+define ADD_YACC_DEPEND
+$(strip ${1}):|$(strip ${2})
+
+clean_$(strip ${5}): clean_$(strip ${1})_$(strip ${3})_$(strip ${4})
+.PHONY: clean_$(strip ${1})_$(strip ${3})_$(strip ${4})
+clean_$(strip ${1})_$(strip ${3})_$(strip ${4}):
+	rm -f ${3} ${4} $(addprefix $(dir ${4}),location.hh position.hh stack.hh)
+endef
+
+# ADD_YACC_RULE - Parameterized "function" for generating cpp files from YACC inputs. 
+#   Dependencies are set so that YACC is not called for for both the header and the 
+#   source files. The first argument is the YACC file. The second argument is the 
+#   YACC macro. 
+#
+#	ADD_YACC_RULE <tgt> <%.y> <cmd>
+#   USE WITH EVAL
+#
+#%.o:${1}
+define ADD_YACC_RULE
+%_p.cxx %_p.h:${2}
+	$(QUIET)${3}
+%_p.h:%_p.cxx
+
+clean_${1} : clean_$(strip ${1})_$(strip ${2})
+clean_$(strip ${1})_$(strip ${2}):
+	rm -f $(addsuffix *_p.cxx *_p.h,$(addsuffix /,${${1}_SRCDIRS}))
+endef
+
+# ADD_SWIG_RULE - Parameterized "function" for pattern rules to generate cpp files
+#   from swig inputs. The second argument is the swig .i file. The third argument is
+#   the target directory. Argument four is the swig macro.
+#
+#   USE WITH EVAL
+#
+define ADD_SWIG_RULE
+$(addprefix ${1}/,%_pywrap.cxx) $(addprefix ${3}/,%.py): $(addprefix ${1}/,${2})
+	$(QUIET)${4}
+$(addprefix ${3}/,%.py) : $(addprefix ${1}/,%_pywrap.cxx)
+
+$(addprefix ${1}/,%_wrap.cxx) $(addprefix ${3}/,%.py): $(addprefix ${1}/,${2})
+	$(QUIET)${4}
+$(addprefix ${3}/,%.py) : $(addprefix ${1}/,%_wrap.cxx)
+endef
+
+# ADD_DEP - Parameterized "function" do add a generic "this before that" step
+#
+#   USE WITH EVAL
+#
+define ADD_DEP
+${1}: ${2}
+endef
+
+# ADD_RESOURCE_RULE - Parameterized "function" do add a pattern rule for QT
+#   resource files (images and such). The 2nd argument is the input set, the 3rd
+#   argument is the qt rule for packaging resources
+define ADD_RESOURCE_RULE
+qrc_%.cxx: ${2}
+	$(QUIET)${3}
+endef
+
+# EXPORT_FILE - Parameterized "function" to put a target into a specified location
+#   EXPORT_FILE <FILE> <TGT_FILE_LOCATION> <EXPORT_DIR>
+#
+#   USE WITH EVAL
+#
+#$(eval $(info 1=${1} 2=${2} 3=${3}))
+define EXPORT_FILE
+all: ${3}
+${3}: ${2}
+	@mkdir -p $(strip $(dir ${3}))
+	cp ${2} ${3}
+
+clean_${1}: clean_${3}
+.PHONY: clean_${3}
+clean_${3}:
+	rm -f ${3}
+endef
+
+define ADD_QPLUGIN_INFO_RULE
+${1}: ${${1}_TGTDIR}/$(notdir ${2})
+${${1}_TGTDIR}/$(notdir ${2}):
+	ln -sf ${2} ${${1}_TGTDIR}
 endef
 
 # ADD_TARGET_RULE - Parameterized "function" that adds a new target to the
@@ -66,10 +213,12 @@ endef
 define ADD_TARGET_RULE
     ifeq "$$(suffix ${1})" ".a"
         # Add a target for creating a static library.
-        $${TARGET_DIR}/${1}: $${${1}_OBJS}
-	    @mkdir -p $$(dir $$@)
-	    $$(strip $${AR} $${ARFLAGS} $$@ $${${1}_OBJS})
-	    $${${1}_POSTMAKE}
+        $${${1}_TGTDIR}/${1}: $${${1}_OBJS}
+        ##$${TARGET_DIR}/${1}: $${${1}_OBJS}
+	     @echo ar $$(notdir $$@)...
+	     @mkdir -p $$(dir $$@)
+	     $(QUIET)$$(strip $${AR} $${ARFLAGS} $$@ $${${1}_OBJS})
+	     $${${1}_POSTMAKE}
     else
         # Add a target for linking an executable. First, attempt to select the
         # appropriate front-end to use for linking. This might not choose the
@@ -80,18 +229,29 @@ define ADD_TARGET_RULE
             # No linker was explicitly specified to be used for this target. If
             # there are any C++ sources for this target, use the C++ compiler.
             # For all other targets, default to using the C compiler.
-            ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SOURCES}))" ""
+#            ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SOURCES}))" ""
                 ${1}_LINKER = $${CXX}
-            else
-                ${1}_LINKER = $${CC}
-            endif
+#            else
+#                ${1}_LINKER = $${CC}
+#            endif
         endif
 
-        $${TARGET_DIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS}
-	    @mkdir -p $$(dir $$@)
-	    $$(strip $${${1}_LINKER} -o $$@ $${LDFLAGS} $${${1}_LDFLAGS} \
-	        $${${1}_OBJS} $${LDLIBS} $${${1}_LDLIBS})
-	    $${${1}_POSTMAKE}
+# RE-ENABLE IF WE REMOVE THE .PHONY TARGET MAPPING
+        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
+# END RE-ENABLE        
+#        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS}
+	     @mkdir -p $$(dir $$@)
+	     @echo $${${1}_LINKER} $$(notdir $$@)...
+#	     $$(strip $${${1}_LINKER} -o $$@ $${LDFLAGS} $${${1}_LDFLAGS} \
+#	        --whole-archive $${${1}_OBJS} --no-whole-archive $${LDLIBS} $${${1}_LDLIBS})
+	     $(QUIET)$$(strip $${${1}_LINKER} -o $$@ \
+	        $${LDFLAGS} $${CXXFLAGS} $${${1}_LDFLAGS} \
+	        -Wl,--whole-archive \
+	        $${${1}_OBJS} $${${1}_STATICLIBS} \
+	        -Wl,--no-whole-archive \
+	        $${LDLIBS} $${${1}_LDLIBS})
+#		-Wl,--as-needed 
+	     $${${1}_POSTMAKE}
     endif
 endef
 
@@ -107,26 +267,76 @@ endef
 
 # COMPILE_C_CMDS - Commands for compiling C source code.
 define COMPILE_C_CMDS
-	@mkdir -p $(dir $@)
-	$(strip ${CC} -o $@ -c -MD ${CFLAGS} ${SRC_CFLAGS} ${INCDIRS} \
-	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<)
-	@cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
-	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-	     -e '/^$$/ d' -e 's/$$/ :/' < ${@:%$(suffix $@)=%.d} \
-	     >> ${@:%$(suffix $@)=%.P}; \
+	@echo $(strip ${CC}) $(notdir $@)...
+	$(QUIET)mkdir -p $(dir $@)
+	$(QUIET)$(strip ${CC} -o $@ -c -MMD -MF $(addsuffix .d,$(basename $@)) ${CFLAGS} ${SRC_CFLAGS} ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
+	     ${SRC_DEFS} ${DEFS} $<)
+	$(QUIET)cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
+	$(QUIET)sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+	    -e '/^$$/ d' -e 's/$$/ :/' < ${@:%$(suffix $@)=%.d} \
+	    >> ${@:%$(suffix $@)=%.P}; \
 	 rm -f ${@:%$(suffix $@)=%.d}
 endef
 
 # COMPILE_CXX_CMDS - Commands for compiling C++ source code.
 define COMPILE_CXX_CMDS
-	@mkdir -p $(dir $@)
-	$(strip ${CXX} -o $@ -c -MD ${CXXFLAGS} ${SRC_CXXFLAGS} ${INCDIRS} \
-	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<)
-	@cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
-	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-	     -e '/^$$/ d' -e 's/$$/ :/' < ${@:%$(suffix $@)=%.d} \
-	     >> ${@:%$(suffix $@)=%.P}; \
-	 rm -f ${@:%$(suffix $@)=%.d}
+	@echo $(strip ${CXX}) $(notdir $@)...
+	$(QUIET)mkdir -p $(dir $@)
+	$(strip ${PREFIX_CMD} ${CXX} -o $@ -c -MMD -MF $(addsuffix .d,$(basename $@)) ${CXXFLAGS} ${SRC_CXXFLAGS} ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
+	    ${SRC_DEFS} ${DEFS} $<)
+	cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
+	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+	    -e '/^$$/ d' -e 's/$$/ :/' < ${@:%$(suffix $@)=%.d} \
+	    >> ${@:%$(suffix $@)=%.P}; \
+	rm -f ${@:%$(suffix $@)=%.d}
+	$(QUIET)$(if $(findstring moc_,$(strip $@)),\
+		sed -e 's#\S*moc_\S*\.cpp.*#\\#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
+		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
+	)
+	$(QUIET)$(if $(findstring _wrap,$(strip $@)),\
+		sed -e 's#_wrap\.cxx#\.i#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
+		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
+	)
+	$(QUIET)$(if $(findstring _pywrap,$(strip $@)),\
+		sed -e 's#_pywrap\.cxx#\.i#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
+		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
+	)
+	$(QUIET)$(if $(findstring _l.,$(strip $@)),\
+		sed -e 's#_l\.cxx#\.l#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
+		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
+	)
+	sed -e 's#_p\.cxx#\.y#' -e 's#_p\.h#\.y#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
+	mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}
+endef
+
+# GENERATE_MOC_CMDS - Command for calling Qt moc on inputs to create C++ code
+define GENERATE_MOC_CMDS
+	@echo moc $@...
+	$(QUIET)$(strip ${DISTCC_BIN} ${MOC} -nw ${MOC_FLAGS} -o $@ ${SRC_INCDIRS} ${INCDIRS} $<)
+endef
+
+# GENERATE_LEX_CMDS - Command for calling lex to generate C++ code
+define GENERATE_LEX_CMDS
+	@echo lex $@...
+	$(QUIET)$(strip ${LEX} -Ca -o $@ $<)
+endef
+
+# GENERATE_YACC_CMDS - Command for calling yacc to generate C++ code
+define GENERATE_YACC_CMDS
+	@echo yacc $@...
+	$(QUIET)$(strip ${YACC} ${YACC_FLAGS} --defines=$(call CANONICAL_PATH,$(dir $@)/$(subst .y,_p.h,$(notdir $<))) -o ${@:.h=.cxx}  $<)
+endef
+
+# GENERATE_SWIG_CMDS - Commands for calling swig to generate C++ and python.
+define GENERATE_SWIG_CMDS
+	@echo swig $@...
+	$(QUIET)$(strip ${SWIG}  -c++ -python -o $(subst /$(VCO)/,/src/,${@:.py=${PYEXT}}) -outdir ${TGTDIR} ${SRC_INCDIRS} ${INCDIRS} ${SWIG_FLAGS} $<);
+endef
+
+# GENERATE_RCC_CMDS - Commands for packaging Qt resource files
+define GENERATE_RCC_CMDS
+	@echo rcc $@
+	$(QUIET)$(strip ${RCC} -name $(notdir $*) -o $@ $<)
 endef
 
 # INCLUDE_SUBMAKEFILE - Parameterized "function" that includes a new
@@ -139,6 +349,7 @@ define INCLUDE_SUBMAKEFILE
     # Initialize all variables that can be defined by a makefile fragment, then
     # include the specified makefile fragment.
     TARGET        :=
+    TARGET_DIR    :=
     TGT_CFLAGS    :=
     TGT_CXXFLAGS  :=
     TGT_DEFS      :=
@@ -149,12 +360,24 @@ define INCLUDE_SUBMAKEFILE
     TGT_POSTCLEAN :=
     TGT_POSTMAKE  :=
     TGT_PREREQS   :=
+    TGT_CHECK_LIB_DEFS := true
 
     SOURCES       :=
+    SRC_MOC_H     :=
     SRC_CFLAGS    :=
     SRC_CXXFLAGS  :=
     SRC_DEFS      :=
     SRC_INCDIRS   :=
+    SRC_NEEDS_MOC :=
+    SRC_DEPENDS_ON_YACC :=
+    SRC_SWIG_FLAGS := -keyword -builtin
+    SRC_MOC_FLAGS :=
+    UI_NAMES      :=
+    BUILD_FIRST   :=
+    YACC_FLAGS    :=
+
+    TGT_PLUG_INFO :=
+    EXPORT_DIR    :=
 
     SUBMAKEFILES  :=
 
@@ -172,9 +395,26 @@ define INCLUDE_SUBMAKEFILE
     # Ensure that valid values are set for BUILD_DIR and TARGET_DIR.
     ifeq "$$(strip $${BUILD_DIR})" ""
         BUILD_DIR := build
+        BUILD_DIR := $$(addprefix $${CWD}/,$${BUILD_DIR})
+        BUILD_DIR := $$(call CANONICAL_PATH,$${BUILD_DIR})
     endif
+
     ifeq "$$(strip $${TARGET_DIR})" ""
-        TARGET_DIR := .
+        TARGET_DIR := $$(call PEEK,$${TARGET_DIR_STACK})
+        ifeq "$$(strip $${TARGET_DIR})" ""
+            TARGET_DIR := .
+        endif
+    endif
+
+    TARGET_DIR := $$(subst src,$$(VCO),$$(DIR))
+
+    TARGET_DIR_STACK := $$(call PUSH,$${TARGET_DIR_STACK},$${TARGET_DIR})
+	 #TARGET_DIR := $$(call PEEK,$${TARGET_DIR_STACK})
+
+    ifneq "$$(strip $${EXPORT_DIR})" ""
+        EXPORT_DIR := $$(call CANONICAL_PATH,$$(addprefix $${EXPORT_DIR_BASE}/,$${EXPORT_DIR}))
+    else
+        EXPORT_DIR := $$(call CANONICAL_PATH,$${EXPORT_DIR_BASE})
     endif
 
     # Determine which target this makefile's variables apply to. A stack is
@@ -189,17 +429,44 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_CXXFLAGS  := $${TGT_CXXFLAGS}
         $${TGT}_DEFS      := $${TGT_DEFS}
         $${TGT}_DEPS      :=
+        $${TGT}_SRCDIRS   :=
+        TGT_INCDIRS       := $${DIR} $${TGT_INCDIRS}
         TGT_INCDIRS       := $$(call QUALIFY_PATH,$${DIR},$${TGT_INCDIRS})
         TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
         $${TGT}_INCDIRS   := $${TGT_INCDIRS}
-        $${TGT}_LDFLAGS   := $${TGT_LDFLAGS}
-        $${TGT}_LDLIBS    := $${TGT_LDLIBS}
+        $${TGT}_LDFLAGS   :=
+        ifeq "$$(suffix $${TGT})" ".so"
+            $${TGT}_LDFLAGS += -shared
+        endif
+        ifneq "$$(suffix $${TGT})" ".a"
+            ifeq "$$(strip $${TGT_CHECK_LIB_DEFS})" "true"
+                $${TGT}_LDFLAGS += -Wl,--no-undefined
+            endif
+        endif
+        $${TGT}_LDFLAGS   += $${TGT_LDFLAGS}
+        $${TGT}_STATICLIBS := $$(filter %.a,$${TGT_LDLIBS})
+        $${TGT}_LDLIBS    := $$(filter-out %.a,$${TGT_LDLIBS})
         $${TGT}_LINKER    := $${TGT_LINKER}
         $${TGT}_OBJS      :=
         $${TGT}_POSTCLEAN := $${TGT_POSTCLEAN}
         $${TGT}_POSTMAKE  := $${TGT_POSTMAKE}
-        $${TGT}_PREREQS   := $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
         $${TGT}_SOURCES   :=
+        $${TGT}_NEEDS_MOC :=
+        $${TGT}_TGTDIR    := $${TARGET_DIR}
+        $${TGT}_PREREQS   :=
+#        ifneq "$$(strip $${TGT_PREREQS})" ""
+#          $$(call $$(foreach PRE,$${TGT_PREREQS},\
+#                                                    $$(eval $$(info $${TARGET} PRE is [$${PRE}]));\
+#                                                    $$(eval $$(info $${PRE}_TGTDIR is [$${$${PRE}_TGTDIR}]));\
+#                                                    $$(eval $$(info $${TGT}_PREREQS is [$${$${TGT}_PREREQS}]));\
+#                                                    $${TGT}_PREREQS += $${PRE}))
+#        endif
+        #$${TGT}_PREREQS   := $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
+        $${TGT}_PREREQS   := $${TGT_PREREQS}
+        $${TGT}_PLUG_INFO :=
+        $${TGT}_SWIG_FLAGS := $${SRC_SWIG_FLAGS}
+        $${TGT}_MOC_FLAGS := $${SRC_MOC_FLAGS}
+        $${TGT}_EXPORTDIR := $${EXPORT_DIR}
     else
         # The values defined by this makefile apply to the the "current" target
         # as determined by which target is at the top of the stack.
@@ -207,14 +474,29 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_CFLAGS    += $${TGT_CFLAGS}
         $${TGT}_CXXFLAGS  += $${TGT_CXXFLAGS}
         $${TGT}_DEFS      += $${TGT_DEFS}
+        TGT_INCDIRS       := $${DIR} $${TGT_INCDIRS}
         TGT_INCDIRS       := $$(call QUALIFY_PATH,$${DIR},$${TGT_INCDIRS})
         TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
         $${TGT}_INCDIRS   += $${TGT_INCDIRS}
         $${TGT}_LDFLAGS   += $${TGT_LDFLAGS}
-        $${TGT}_LDLIBS    += $${TGT_LDLIBS}
+        $${TGT}_STATICLIBS += $$(filter %.a,$${TGT_LDLIBS})
+        $${TGT}_LDLIBS    += $$(filter-out %.a,$${TGT_LDLIBS})
         $${TGT}_POSTCLEAN += $${TGT_POSTCLEAN}
         $${TGT}_POSTMAKE  += $${TGT_POSTMAKE}
+#        $${TGT}_TGTDIR    := $${TARGET_DIR}
+#        ifneq "$${TGT_PREREQS}" ""
+#          $$(call $$(foreach PRE,$${TGT_PREREQS},$${TGT}_PREREQS += $${PRE}))
+#        endif
+        #$${TGT}_PREREQS   += $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
         $${TGT}_PREREQS   += $${TGT_PREREQS}
+        $${TGT}_SWIG_FLAGS := $${SRC_SWIG_FLAGS}
+        $${TGT}_MOC_FLAGS := $${SRC_MOC_FLAGS}
+    endif
+
+    ifneq "$$(strip $${TGT_PLUG_INFO})" ""
+        TGT_PLUG_INFO     := $$(call QUALIFY_PATH,$${DIR},$${TGT_PLUG_INFO})
+        TGT_PLUG_INFO     := $$(call CANONICAL_PATH,$${TGT_PLUG_INFO})
+        $${TGT}_PLUG_INFO := $$(strip $${TGT_PLUG_INFO} $${$${TGT}_PLUG_INFO})
     endif
 
     # Push the current target onto the target stack.
@@ -229,6 +511,9 @@ define INCLUDE_SUBMAKEFILE
         endif
 
         # Qualify and canonicalize paths.
+        ifneq "$$(strip $${SRC_MOC_H})" ""
+            SOURCES += $$(patsubst %.h,moc_$${MOC_SRC_EXT},$${SRC_MOC_H})
+        endif
         SOURCES     := $$(call QUALIFY_PATH,$${DIR},$${SOURCES})
         SOURCES     := $$(call CANONICAL_PATH,$${SOURCES})
         SRC_INCDIRS := $$(call QUALIFY_PATH,$${DIR},$${SRC_INCDIRS})
@@ -236,11 +521,17 @@ define INCLUDE_SUBMAKEFILE
 
         # Save the list of source files for this target.
         $${TGT}_SOURCES += $${SOURCES}
+        $${TGT}_SRCDIRS += $$(call CANONICAL_PATH,$${DIR})
 
         # Convert the source file names to their corresponding object file
         # names.
-        OBJS := $$(addprefix $${BUILD_DIR}/$$(call CANONICAL_PATH,$${TGT})/,\
-                   $$(addsuffix .o,$$(basename $${SOURCES})))
+        ## UNCERTAIN PROVENENCE 
+#        OBJS := $$(addprefix $${BUILD_DIR}/,$$(subst $${ROOT},,$$(addsuffix .o,$${basename $${SOURCES}})))
+        ## DET VERSION
+        OBJS := $$(subst /src/,/${VCO}/,$$(addsuffix .o,$$(basename $${SOURCES})))
+        ## ROOK VERSION
+#         OBJS := $$(addprefix $$(addsuffix /$${BUILD_DIR}/,$$(DIR)),$$(addsuffix .o,$$(basename $$(notdir $${SOURCES}))))
+
 
         # Add the objects to the current target's list of objects, and create
         # target-specific variables for the objects based on any source
@@ -252,7 +543,46 @@ define INCLUDE_SUBMAKEFILE
         $${OBJS}: SRC_DEFS     := $$(addprefix -D,$${$${TGT}_DEFS} $${SRC_DEFS})
         $${OBJS}: SRC_INCDIRS  := $$(addprefix -I,\
                                      $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
+        $${OBJS}: SWIG_FLAGS   := $${$${TGT}_SWIG_FLAGS}
+        $${OBJS}: MOC_FLAGS    := $${$${TGT}_MOC_FLAGS}
+        $${OBJS}: YACC_FLAGS   := $${YACC_FLAGS}
+        $${OBJS}: TGTDIR       := $${$${TGT}_TGTDIR}
+        ifneq "$$(strip $$(filter %_wrap.cxx,$${SOURCES}))" ""
+            PYOUT := $$(addprefix $${$${TGT}_TGTDIR}/,$$(patsubst %_wrap.cxx,%.py,$$(notdir $$(strip $$(filter %_wrap.cxx,$${SOURCES})))))
+            $${PYOUT}: PYEXT := _wrap.cxx
+            $${PYOUT}: TGTDIR :=  $${$${TGT}_TGTDIR}
+            $${PYOUT}: SWIG_FLAGS := $${$${TGT}_SWIG_FLAGS}
+            $${PYOUT}: SRC_INCDIRS :=$$(addprefix -I,\
+                                     $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
+        endif
+        ifneq "$$(strip $$(filter %_pywrap.cxx,$${SOURCES}))" ""
+            PYOUT := $$(addprefix $${$${TGT}_TGTDIR}/,$$(patsubst %_pywrap.cxx,%.py,$$(notdir $$(strip $$(filter %_pywrap.cxx,$${SOURCES})))))
+            $${PYOUT}: PYEXT := _pywrap.cxx
+            $${PYOUT}: TGTDIR :=  $${$${TGT}_TGTDIR}
+            $${PYOUT}: SWIG_FLAGS := $${$${TGT}_SWIG_FLAGS}
+            $${PYOUT}: SRC_INCDIRS :=$$(addprefix -I,\
+                                     $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
+        endif
     endif
+
+    ifneq "$$(strip $${BUILD_FIRST})" ""
+        BUILD_FIRST := $$(call QUALIFY_PATH,$${DIR},$${BUILD_FIRST})
+        $${TGT}_BUILD_FIRST := $$(call CANONICAL_PATH,$${BUILD_FIRST})
+    endif
+
+    ifneq "$$(strip $${UI_NAMES})" ""
+        UI_NAMES     := $$(call QUALIFY_PATH,$${DIR},$${UI_NAMES})
+        $${TGT}_UI_NAMES := $$(call CANONICAL_PATH,$${UI_NAMES})
+    endif
+
+	 ifneq "$$(strip $${SRC_DEPENDS_ON_YACC})" ""
+       $${TGT}_DEPENDS_ON_YACC := $$(strip $$(call QUALIFY_PATH,$${DIR},$${SRC_DEPENDS_ON_YACC})) $$(strip $${$${TGT}_DEPENDS_ON_YACC})
+	 endif
+
+	 ifneq "$$(strip $${SRC_NEEDS_MOC})" ""
+		# Create a target/src specific variable to moc the headers listed
+		$${TGT}_NEEDS_MOC += $$(call CANONICAL_PATH,$$(call QUALIFY_PATH,$${DIR},$${SRC_NEEDS_MOC}))
+	 endif
 
     ifneq "$$(strip $${SUBMAKEFILES})" ""
         # This makefile has submakefiles. Recursively include them.
@@ -265,6 +595,9 @@ define INCLUDE_SUBMAKEFILE
     # Reset the "current" target to it's previous value.
     TGT_STACK := $$(call POP,$${TGT_STACK})
     TGT := $$(call PEEK,$${TGT_STACK})
+
+	 # RCDH - multi-target
+    TARGET_DIR_STACK := $$(call POP,$${TARGET_DIR_STACK})
 
     # Reset the "current" directory to it's previous value.
     DIR_STACK := $$(call POP,$${DIR_STACK})
@@ -326,8 +659,17 @@ endif
 
 # Define the source file extensions that we know how to handle.
 C_SRC_EXTS := %.c
-CXX_SRC_EXTS := %.C %.cc %.cp %.cpp %.CPP %.cxx %.c++
-ALL_SRC_EXTS := ${C_SRC_EXTS} ${CXX_SRC_EXTS}
+MOC_SRC_EXT := %.cpp
+CXX_SRC_EXTS := %.cxx %.cc %.c++ ${MOC_SRC_EXT} ${C_SRC_EXTS}
+#CXX_SRC_EXTS := %.C %.cc %.cp %.cpp %.CPP %.cxx %.c++
+GEN_HDR_EXTS := %.h
+LEX_SRC_EXT := %.l
+YACC_SRC_EXT := %.y
+SWIG_SRC_EXT := %.i
+RCC_SRC_EXT := %.qrc
+ALL_SRC_EXTS := ${C_SRC_EXTS} ${CXX_SRC_EXTS} ${GEN_HDR_EXTS} \
+                ${LEX_SRC_EXT} ${YACC_SRC_EXT} \
+					 ${SWIG_SRC_EXT} ${RCC_SRC_EXT}
 
 # Initialize global variables.
 ALL_TGTS :=
@@ -335,35 +677,71 @@ DEFS :=
 DIR_STACK :=
 INCDIRS :=
 TGT_STACK :=
+EXPORT_DIR_BASE :=
 
 # Include the main user-supplied submakefile. This also recursively includes
 # all other user-supplied submakefiles.
 $(eval $(call INCLUDE_SUBMAKEFILE,main.mk))
+$(eval $(info Done reading all SUBMAKEFILES))
+$(eval $(info Adding rules for all targets from Makefiles))
 
 # Perform post-processing on global variables as needed.
 DEFS := $(addprefix -D,${DEFS})
+SYSTEM_INCDIRS := $(addprefix -isystem,$(call CANONICAL_PATH,${INCDIRS}))
 INCDIRS := $(addprefix -I,$(call CANONICAL_PATH,${INCDIRS}))
 
 # Define the "all" target (which simply builds all user-defined targets) as the
 # default goal.
 .PHONY: all
-all: $(addprefix ${TARGET_DIR}/,${ALL_TGTS})
+all: $(foreach TGT,${ALL_TGTS}, $(addprefix ${${TGT}_TGTDIR}/,${TGT}))
+
+# ADDED FOR SHORTHAND OF LIB/TARGET NAMES
+.PHONY: ${ALL_TGTS}
+$(foreach TGT,${ALL_TGTS},$(eval $(call ADD_DEP,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT}))))
+
+# EXPORT TARGETS TO THEIR EXPORT_DIR PATHS, WHICH ARE RELATIVE TO $(EXPORT_DIR_BASE)
+$(foreach TGT,${ALL_TGTS},$(if $(filter-out ${${TGT}_TGTDIR},${${TGT}_EXPORTDIR}),\
+    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT}),$(addprefix ${${TGT}_EXPORTDIR}/,${TGT})))))
+
+# QtPlugin *_INFO files as targets
+all: $(foreach TGT,${ALL_TGTS},\
+       $(foreach INFO,${${TGT}_PLUG_INFO},\
+         ${${TGT}_EXPORTDIR}/$(notdir ${INFO})))
 
 # Add a new target rule for each user-defined target.
 $(foreach TGT,${ALL_TGTS},\
   $(eval $(call ADD_TARGET_RULE,${TGT})))
 
 # Add pattern rule(s) for creating compiled object code from C source.
+# DET VERSION
 $(foreach TGT,${ALL_TGTS},\
+  $(foreach DIR,${${TGT}_SRCDIRS},\
+    $(foreach EXT,${C_SRC_EXTS},\
+      $(eval $(call ADD_OBJECT_RULE2,$(subst /src/,/$(VCO)/,${DIR}),\
+             $(addprefix ${DIR}/,${EXT}),$${COMPILE_C_CMDS})))))
+# ROOK VERSION
+#$(foreach TGT,${ALL_TGTS},\
   $(foreach EXT,${C_SRC_EXTS},\
-    $(eval $(call ADD_OBJECT_RULE,${BUILD_DIR}/$(call CANONICAL_PATH,${TGT}),\
-             ${EXT},$${COMPILE_C_CMDS}))))
+    $(foreach DIR,${${TGT}_SRCDIRS},\
+      $(eval $(call ADD_OBJECT_RULE,$(addprefix ${DIR},/${BUILD_DIR}),\
+           $(addprefix ${DIR}/,$(strip ${EXT})),$${COMPILE_C_CMDS})))))
 
 # Add pattern rule(s) for creating compiled object code from C++ source.
+# DET VERSION
 $(foreach TGT,${ALL_TGTS},\
+  $(foreach DIR,${${TGT}_SRCDIRS},\
+    $(foreach EXT,${CXX_SRC_EXTS},\
+      $(eval $(call ADD_OBJECT_RULE2,$(subst /src/,/$(VCO)/,${DIR}),\
+               $(addprefix ${DIR}/,${EXT}),$${COMPILE_CXX_CMDS}))\
+    )\
+  )\
+)
+# ROOK VERSION
+#$(foreach TGT,${ALL_TGTS},\
   $(foreach EXT,${CXX_SRC_EXTS},\
-    $(eval $(call ADD_OBJECT_RULE,${BUILD_DIR}/$(call CANONICAL_PATH,${TGT}),\
-             ${EXT},$${COMPILE_CXX_CMDS}))))
+    $(foreach DIR,${${TGT}_SRCDIRS},\
+      $(eval $(call ADD_OBJECT_RULE,$(addprefix ${DIR},/${BUILD_DIR}),\
+             $(addprefix ${DIR}/,$(strip ${EXT})),$${COMPILE_CXX_CMDS})))))
 
 # Add "clean" rules to remove all build-generated files.
 .PHONY: clean
@@ -373,3 +751,87 @@ $(foreach TGT,${ALL_TGTS},\
 # Include generated rules that define additional (header) dependencies.
 $(foreach TGT,${ALL_TGTS},\
   $(eval -include ${${TGT}_DEPS}))
+
+# Include moc rules
+$(foreach TGT,${ALL_TGTS},\
+  $(eval $(call ADD_MOC_RULE,${TGT},%.h,$${GENERATE_MOC_CMDS})))
+
+# Include YACC dependencies
+$(foreach TGT,${ALL_TGTS},\
+  $(foreach SRC,${${TGT}_DEPENDS_ON_YACC},\
+    $(eval $(call ADD_YACC_DEPEND,\
+                                       $(subst /src/,/$(VCO)/,$(addsuffix .o,$(basename ${SRC}))),\
+                                       $(subst /src/,/$(VCO)/,$(subst .y,_p.o,$(wildcard $(dir ${SRC})*.y))),\
+                                       $(subst .y,_p.h,$(wildcard $(dir ${SRC})*.y)),\
+                                       $(subst .y,_p.cxx,$(wildcard $(dir ${SRC})*.y)),\
+                                       $(TGT)\
+                                       ))\
+  )\
+)
+
+# Include YACC sources
+$(foreach TGT,${ALL_TGTS},\
+  $(eval $(call ADD_YACC_RULE,${TGT},\
+                              $(strip ${YACC_SRC_EXT}),\
+                              $${GENERATE_YACC_CMDS})))
+
+# Include LEX sources
+$(foreach TGT,${ALL_TGTS},\
+  $(eval $(call ADD_LEX_RULE,${TGT},\
+                             $(strip ${LEX_SRC_EXT}),\
+                             $${GENERATE_LEX_CMDS})))
+
+# Include swig sources
+$(foreach TGT,${ALL_TGTS},\
+  $(foreach SRCDIR,${${TGT}_SRCDIRS},\
+  $(if $(and $(wildcard $(addprefix ${SRCDIR}/,*.i)),$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i)))))),\
+    $(eval $(call ADD_SWIG_RULE,$(strip ${SRCDIR}),\
+                                  $(strip ${SWIG_SRC_EXT}),\
+                                  ${${TGT}_TGTDIR},\
+                                  $${GENERATE_SWIG_CMDS}))\
+    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py),$(addprefix ${${TGT}_EXPORTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py)))\
+  )\
+))
+
+# Include Qt resources
+$(foreach TGT,${ALL_TGTS},\
+  $(eval $(call ADD_RESOURCE_RULE,${BUILD_DIR}/$(call CANONICAL_PATH,${TGT}),\
+                                       ${RCC_SRC_EXT},\
+                                       $${GENERATE_RCC_CMDS})))
+
+# Include specific moc dependencies from outside of the source directory
+$(foreach TGT,${ALL_TGTS},\
+  $(foreach MOCCABLE,${${TGT}_NEEDS_MOC},\
+    $(eval $(call SPECIFIC_MOC_RULE,${BUILD_DIR}/$(call CANONICAL_PATH,${TGT}),\
+                                         ${MOCCABLE},\
+                                         $${GENERATE_MOC_CMDS}))))
+
+# Include rules for exporting PyxisOpen plugin info files
+$(foreach TGT,${ALL_TGTS},\
+  $(foreach INFO,${${TGT}_PLUG_INFO},\
+    $(eval $(call ADD_QPLUGIN_INFO_RULE,${TGT},${INFO}))\
+    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,$(notdir ${INFO})),$(addprefix ${${TGT}_EXPORTDIR}/,$(notdir ${INFO}))))\
+))
+#    $(eval $(call EXPORT_FILE,${INFO},$(join ${${TGT}_TGTDIR},${INFO}),${${TGT}_EXPORTDIR})) \
+#    $(eval $(call EXPORT_FILE,${INFO}))\
+
+##$(eval $(info $$MOCCABLE is [${MOCCABLE}]));\
+
+ui_%.h: %.ui
+	$(QUIET)echo Create UI header $@
+	$(QUIET)$(strip $(UIC) -o $@ $<)
+
+$(foreach TGT,${ALL_TGTS},\
+  $(foreach UI,${${TGT}_UI_NAMES},\
+    $(eval $(call ADD_DEP,$(addprefix ${BUILD_DIR}/$(call CANONICAL_PATH,${TGT})/$(dir ${UI}),\
+                                      $(patsubst %.ui,%.o,$(notdir ${UI}))),\
+                          $(dir ${UI})/$(patsubst %.ui,ui_%.h,$(notdir ${UI}))))))
+#    $(eval $(info $$TGT is [${TGT}]));\
+#    $(eval $(info $$UI is [${UI}]));\
+#    $(eval $(info $$H is [$(dir ${UI})/$(patsubst %.ui,ui_%.h,$(notdir ${UI}))]));\
+#    $(eval $(info $$BLD-dir is [$(addprefix ${BUILD_DIR}/$(call CANONICAL_PATH,${TGT})/$(dir ${UI}),\
+#                                      $(patsubst %.ui,%.o,$(notdir ${UI})))]));
+
+$(eval $(info Done adding rules. Dependency graph starting...))
+
+
