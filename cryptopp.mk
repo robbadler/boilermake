@@ -1,0 +1,7 @@
+
+CRYPTOPP_VERSION  := 561
+CRYPTOPP_DIR  := /project/dsm/cicd/tools/cryptopp$(CRYPTOPP_VERSION)/$(VCO)
+
+CRYPTOPP_INCLUDES := -isystem$(CRYPTOPP_DIR)
+CRYPTOPP_LIBDIR   := -L$(CRYPTOPP_DIR)
+CRYPTOPP_LIB      := -lcryptopp

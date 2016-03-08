@@ -189,7 +189,7 @@ define EXPORT_FILE
 all: ${3}
 ${3}: ${2}
 	@mkdir -p $(strip $(dir ${3}))
-	cp ${2} ${3}
+	ln -sf ${2} ${3}
 
 clean_${1}: clean_${3}
 .PHONY: clean_${3}
@@ -282,7 +282,7 @@ endef
 define COMPILE_CXX_CMDS
 	@echo $(strip ${CXX}) $(notdir $@)...
 	$(QUIET)mkdir -p $(dir $@)
-	$(strip ${PREFIX_CMD} ${CXX} -o $@ -c -MMD -MF $(addsuffix .d,$(basename $@)) ${CXXFLAGS} ${SRC_CXXFLAGS} ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
+	$(strip ${PREFIX_CMD} ${CXX} -o $@ -c -MMD -MT $@ -MF $(addsuffix .d,$(basename $@)) ${CXXFLAGS} ${SRC_CXXFLAGS} ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
 	    ${SRC_DEFS} ${DEFS} $<)
 	cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
 	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
@@ -541,8 +541,7 @@ define INCLUDE_SUBMAKEFILE
         $${OBJS}: SRC_CFLAGS   := $${$${TGT}_CFLAGS} $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${$${TGT}_CXXFLAGS} $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS     := $$(addprefix -D,$${$${TGT}_DEFS} $${SRC_DEFS})
-        $${OBJS}: SRC_INCDIRS  := $$(addprefix -I,\
-                                     $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
+        $${OBJS}: SRC_INCDIRS  := $$(addprefix -I,$$(filter-out -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})) $$(filter -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})
         $${OBJS}: SWIG_FLAGS   := $${$${TGT}_SWIG_FLAGS}
         $${OBJS}: MOC_FLAGS    := $${$${TGT}_MOC_FLAGS}
         $${OBJS}: YACC_FLAGS   := $${YACC_FLAGS}

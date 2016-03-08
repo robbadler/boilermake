@@ -4,7 +4,7 @@ $(eval $(info Reading Mentor defs and command flags))
 DEFS := IC_ISO14882 \
 		  __STDC_LIMIT_MACROS \
 		  ANSI_STREAMS_SUPPORT \
-		  SERIALIZATION \
+		  SERIALIZATION
 #DEFS := \
 		  IC_64BIT \
 		  ICFLOW \
@@ -40,8 +40,9 @@ QUIET :=
 endif
 
 CXX = /project/dsm/cicd/tools/color_compile/bin/c++
+#CXX := /usr/bin/c++
 
-CXXFLAGS := -fPIC -msse2 -mfpmath=sse -Wno-deprecated -pthread
+CXXFLAGS := -fPIC -msse2 -mfpmath=sse -Wno-deprecated -pthread -Wno-attributes
 CXXFLAGS_DBG := -g -DDEBUG
 CXXFLAGS_OPT := -O3
 
@@ -80,15 +81,19 @@ BUILD_DIR := $(addprefix ${CWD},${BUILD_DIR})
 EXPORT_DIR_BASE := $(MGC_HOME)/lib
 #TARGET_DIR := /net/swallow/scratch1/iwa/osprey/nonRecursiveMake/boilermake/targs
 LDFLAGS :=	-L. \
-            -L$$MGC_HOME/lib \
+				-L$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
             -Wl,-rpath-link=. \
-            -Wl,-rpath-link=$$MGC_HOME/lib \
+            -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk
+
+## HOWTO DET EXPORT
+#link_pkg_vco -src exports/mgc_home
+#link_mgc -silent -include -pkg `/usr/mgc/bin/get_pkgs exports/mgc_home`
 
 ## Comment the next line to auto-remove generated files
 #.SECONDARY:
 
 $(eval $(info Adding root SUBMAKEFILE))
-SUBMAKEFILES := ${ROOT}/root.mk
+SUBMAKEFILES := ${ROOT}/src.mk
 
 
 # INTERMEDIATE keyword is broken on make 3.81. It also makes targets .PRECIOUS
@@ -121,6 +126,12 @@ PROPGEN = $(MGC_HOME)/bin/xml2h.pl
 
 # Router Message Generator
 MSGGEN = $(MGC_HOME)/bin/xml2msg.pl
+
+# CoreGeom from Infrastructure (temp)
+include coreGeom.mk
+
+# Cryptopp
+include cryptopp.mk
 
 # PYTHON
 include python.mk
@@ -171,6 +182,7 @@ INCDIRS := \
 			  $(BOOST_INCDIRS) \
 			  $(PYTHON_INCDIRS) \
 			  /project/dsm/cicd/tools/pyxis/loki-0.1.7/include/loki \
-			  $(MGC_HOME)/shared/include \
+			  $(MGC_HOME)/shared/include
+#			  $(MGC_HOME)/shared/include/DomainAPI
 
 $(eval $(info Done reading main.mk))
