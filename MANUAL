@@ -25,6 +25,9 @@ CXXFLAGS, LDFLAGS, and possibly others. You can use these variables in your
 boilermake submakefiles and they should generally behave in the expected
 manner.
 
+[[[sfriedbe: These variables are global to the whole process.  If changed
+in one foo.mk, they remain changed for the rest of the build.]]]
+
 Following is the list of special variables recognized by boilermake. Unless
 otherwise noted, the default value for each variable is the empty string.
 
@@ -57,6 +60,12 @@ DEFS
    compilation. These will apply to sources from all submakefiles and for all
    targets. These should be specified exactly as they should be defined (i.e.
    they should not be prefixed with a "-D").
+
+EXPORT_DIR
+----------
+   Specifies the final output directory for a given target, relative to
+   $MGC_HOME/lib. If empty $MGC_HOME/lib is used. TODO: Add a flag/keyword that
+   disables target exporting
 
 SOURCES
 -------
@@ -96,6 +105,12 @@ SRC_DEFS
    sources listed in the current submakefile only. This can be used to augment
    the globally applied DEFS for selected sources.
 
+SRC_DEPENDS_ON_YACC
+-------------------
+   Specifies any source file that depends on (#includes) the output of a yacc/bison
+   run. This list of sources will have its outputs depend on yacc/bison having run
+   first. The yacc/bison file must be in the current directory.
+
 SRC_INCDIRS
 -----------
    Specifies include directories to be searched during compilation of sources
@@ -103,6 +118,23 @@ SRC_INCDIRS
    globally applied INCDIRS for selected sources. Unlike the global INCDIRS
    variable, paths assigned to this variable should be relative to the
    *current* submakefile's directory (not the root of the project).
+
+SRC_MOC_H
+---------
+   List of header files that require moc-ing to generate sources. These sources are
+   then concatenated onto the SOURCES variable for the target. Headers listed that do
+   not require moc will have no effect.
+
+SRC_NEEDS_MOC
+-------------
+   Specifies a list of out-of-directory (usually in ../include or <dir>API) that need
+   moc-ing. Same application as above, but special treatment for directory resolution.
+
+SRC_SWIG_FLAGS
+--------------
+   Overwrites the default swig flags for the sources listed. The default SWIG flags are
+   "-builtin -keyword". Some swig inputs use overloading or reserved keywords, which cause
+   these keywords to throw errors and warnings.
 
 SUBMAKEFILES
 ------------
@@ -175,6 +207,16 @@ TGT_LDFLAGS
 
    Examples of flags that are often specified here include "-L" and "-shared".
 
+[[[sfriedbe:  I don't see how TGT_LDFLAGS can override LDFLAGS in
+general, because LDFLAGS is always used, never filtered, and many options
+don't have a negative version.]]]
+
+TGT_CHECK_LIB_DEFS
+------------------
+   The default behavior generates an error if the target objects directly
+   reference any symbol that is not provided by the TGT_LDLIBS.  To disable
+   this behavior, set TGT_CHECK_LIB_DEFS to anything but "true".
+
 TGT_LDLIBS
 ----------
    Specifies libraries (static or dynamic) that should be passed to the linker
@@ -189,6 +231,27 @@ TGT_LINKER
    attempt to make a reasonable decision based upon the sources that are
    prerequesites of the target (it will choose CXX if there are C++ sources,
    otherwise it will choose CC).
+
+TGT_PLUG_INFO
+-------------
+   Info file name for Qt-based plugin data files used by Osprey
+
+The Link Step
+-------------
+   To make an executable or shared library, the linker is invoked with
+   LDFLAGS, CXXFLAGS, some automatically generated flags, and TGT_LDFLAGS.
+   The target objects and static libraries in TGT_LDLIBS are processed
+   with the linker --whole-archive flag.  LDLIBS and shared libraries in
+   TGT_LDLIBS are processed with the linker --as-needed flag.
+
+   To make a static library, the archiver is invoked with ARFLAGS,
+   and given the list of target objects.  (There is not currently a
+   TGT_ARFLAGS.)
+
+   When the target is a shared library, -shared is added automatically to
+   the linker flags.  When the target is an executable or shared library,
+   the default value of TGT_CHECK_LIB_DEFS adds -Wl,--no-undefined to
+   the linker flags.
 
 TGT_POSTCLEAN
 -------------
@@ -222,3 +285,5 @@ TGT_PREREQS
    executable target may depend on one or more static library targets defined
    elsewhere. This variable can be used to tell boilermake that the executable
    depends on those libraries.
+
+
