@@ -219,6 +219,10 @@ done
 echo "$PRESENT_PARTICIPLE header files..."
 if [ ! -d $DST_SPECIFIC/include/$PROJECT_NAME ]
 then
+    if [ -e $DST_SPECIFIC/include/$PROJECT_NAME ]
+    then
+        rm -f $DST_SPECIFIC/include/$PROJECT_NAME
+    fi
     mkdir -p $DST_SPECIFIC/include/$PROJECT_NAME
 fi
 ls -l $DST_SPECIFIC/include/$PROJECT_NAME
