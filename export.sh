@@ -150,7 +150,7 @@ then
 fi
 if [ -z "$PROJECT_NAME" ]
 then
-    PROJECT_NAME=`grep "url[ 	]*=[ 	]*" $DOT_GIT/config | sed -e 's?^.*/\([^/]*\)?\1? ; s?\.git$??'`
+    PROJECT_NAME=`grep "url[ 	]*=[ 	]*" $DOT_GIT/config | head -1 | sed -e 's?^.*/\([^/]*\)?\1? ; s?\.git$??'`
 fi
 if [ -z "$PROJECT_NAME" ]
 then
@@ -217,12 +217,12 @@ do
 done
 
 echo "$PRESENT_PARTICIPLE header files..."
+if [ -f $DST_SPECIFIC/include/$PROJECT_NAME -o -h $DST_SPECIFIC/include/$PROJECT_NAME ]
+then
+    rm -f $DST_SPECIFIC/include/$PROJECT_NAME
+fi
 if [ ! -d $DST_SPECIFIC/include/$PROJECT_NAME ]
 then
-    if [ -e $DST_SPECIFIC/include/$PROJECT_NAME ]
-    then
-        rm -f $DST_SPECIFIC/include/$PROJECT_NAME
-    fi
     mkdir -p $DST_SPECIFIC/include/$PROJECT_NAME
 fi
 ls -l $DST_SPECIFIC/include/$PROJECT_NAME
