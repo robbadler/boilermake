@@ -135,7 +135,8 @@ then
     echo "$DST is not a directory" >&2
     exit 1
 fi
-
+echo "SRC=$SRC"
+echo "DST=$DST"
 # Determine the project name.
 DOT_GIT=`find $SRC -type d -name .git -print | head -1`
 if [ -z "$DOT_GIT" ]
@@ -143,10 +144,15 @@ then
     echo "Not in a git project" >&2
     exit 1
 fi
-PROJECT_NAME=`grep -E '[ 	]*url[ 	]*=[ 	]*' $DOT_GIT/config | sed -e 's?.*/\([^/]*\)$?\1?' | cut -d. -f1`
+echo "DOT_GIT=$DOT_GIT"
+pushd $DOT_GIT
+PROJECT_NAME=`git remote get-url --all origin | sed -e 's?.*/\([^/]*\)$?\1?' | cut -d. -f1`
+popd
+echo "PROJECT_NAME=$PROJECT_NAME"
 
 # Determine the current version numbers.
 VERSION_HEADER=`find $SRC/* -type f -name version.h -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_" 2>/dev/null`
+echo "VERSION_HEADER=$VERSION_HEADER"
 if [ -z "$VERSION_HEADER" ]
 then
     echo "No version file" >&2
@@ -195,6 +201,10 @@ else
     fi
 fi
 
+echo "COMMAND=$COMMAND"
+echo "PRESENT_PARTICIPLE=$PRESENT_PARTICIPLE"
+echo "DST_SPECIFIC=$DST_SPECIFIC"
+
 # Update the version numbers in the glue files.
 for SRC_VERSION in `find $SRC/* -type f -name 'version' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
@@ -202,12 +212,14 @@ do
 done
 
 echo "$PRESENT_PARTICIPLE header files..."
+echo "checkdir $DST_SPECIFIC/include/$PROJECT_NAME"
 if [ ! -d $DST_SPECIFIC/include/$PROJECT_NAME ]
 then
     mkdir -p $DST_SPECIFIC/include/$PROJECT_NAME
 fi
 for SRC_HEADER in `find $SRC/* -type f \( -name '*.h' -o -name '*.i' \) -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
+   echo "SRC_HEADER=$SRC_HEADER"
     if grep -E '\\ingroup[     ]+public_api' $SRC_HEADER >/dev/null 2>&1
     then
         if [ ! -d `dirname $SRC_HEADER`/.git ]
