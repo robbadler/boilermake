@@ -142,9 +142,21 @@ then
     echo "Not in a git project" >&2
     exit 1
 fi
-pushd $DOT_GIT > /dev/null
-PROJECT_NAME=`git remote get-url --all origin | sed -e 's?.*/\([^/]*\)$?\1?' | cut -d. -f1`
-popd > /dev/null
+if [ -z "$PROJECT_NAME" ]
+then
+    pushd $DOT_GIT > /dev/null
+    PROJECT_NAME=`git remote get-url --all origin | sed -e 's?.*/\([^/]*\)$?\1?' | cut -d. -f1`
+    popd > /dev/null
+fi
+if [ -z "$PROJECT_NAME" ]
+then
+    PROJECT_NAME=`grep "url[ 	]*=[ 	]*" $DOT_GIT/config | sed -e 's?^.*/\([^/]*\)?\1? ; s?\.git$??'`
+fi
+if [ -z "$PROJECT_NAME" ]
+then
+    echo "Unable to determine project name" >&2
+    exit 1
+fi
 
 # Determine the current version numbers.
 VERSION_HEADER=`find $SRC/* -type f -name version.h -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_" 2>/dev/null`
