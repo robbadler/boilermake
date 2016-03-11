@@ -157,6 +157,7 @@ then
     echo "Unable to determine project name" >&2
     exit 1
 fi
+echo "Using project name $PROJECT_NAME"
 
 # Determine the current version numbers.
 VERSION_HEADER=`find $SRC/* -type f -name version.h -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_" 2>/dev/null`
@@ -220,6 +221,7 @@ if [ ! -d $DST_SPECIFIC/include/$PROJECT_NAME ]
 then
     mkdir -p $DST_SPECIFIC/include/$PROJECT_NAME
 fi
+ls -l $DST_SPECIFIC/include/$PROJECT_NAME
 for SRC_HEADER in `find $SRC/* -type f \( -name '*.h' -o -name '*.i' \) -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if grep -E '\\ingroup[     ]+public_api' $SRC_HEADER >/dev/null 2>&1
