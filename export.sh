@@ -261,6 +261,10 @@ done
 if [ 0 -ne $SOURCE ]
 then
     echo "$PRESENT_PARTICIPLE source files..."
+    if [ -f $DST_SPECIFIC/source/$PROJECT_NAME -o -h $DST_SPECIFIC/source/$PROJECT_NAME ]
+    then
+        rm -f $DST_SPECIFIC/source/$PROJECT_NAME
+    fi
     if [ ! -d $DST_SPECIFIC/source/$PROJECT_NAME ]
     then
         mkdir -p $DST_SPECIFIC/source/$PROJECT_NAME
@@ -302,6 +306,10 @@ then
 fi
 
 echo "$PRESENT_PARTICIPLE library files..."
+if [ -f $DST_SPECIFIC/lib -o -h $DST_SPECIFIC/lib ]
+then
+    rm -f $DST_SPECIFIC/lib
+fi
 if [ ! -d $DST_SPECIFIC/lib ]
 then
     mkdir -p $DST_SPECIFIC/lib
@@ -332,6 +340,10 @@ do
 done
 
 echo "$PRESENT_PARTICIPLE executable files..."
+if [ -f $DST_SPECIFIC/bin -o -h $DST_SPECIFIC/bin ]
+then
+    rm -f $DST_SPECIFIC/bin
+fi
 if [ ! -d $DST_SPECIFIC/bin ]
 then
     mkdir -p $DST_SPECIFIC/bin
@@ -362,6 +374,10 @@ do
 done
 
 echo "$PRESENT_PARTICIPLE configuration files..."
+if [ -f $DST_SPECIFIC/config -o -h $DST_SPECIFIC/config ]
+then
+    rm -f $DST_SPECIFIC/config
+fi
 if [ ! -d $DST_SPECIFIC/config ]
 then
     mkdir -p $DST_SPECIFIC/config
