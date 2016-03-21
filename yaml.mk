@@ -6,4 +6,3 @@ YAML_INCDIRS := $(YAML_HOME)/shared/pkgs/yaml_inhouse.$(VCO)/include
 YAML_LIBDIR := -L$(YAML_HOME)/pkgs/yaml/lib.$(VCO)
 
 YAML_LIB := -lyaml-cpp
- 
