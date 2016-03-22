@@ -40,7 +40,7 @@ clean_${1}:
 	$$(strip rm -f \
 	  ${${1}_TGTDIR}/${1} \
 	  ${${1}_EXPORTDIR}/${1} \
-	  ${${1}_TGTDIR}/{*_info,*.py,*.pyc} \
+	  ${${1}_TGTDIR}/{*_info,*.py,*.pyc,*.tcl} \
 	  $${${1}_OBJS:%.o=%.[doP]})
 	$${${1}_POSTCLEAN}
 endef
@@ -136,13 +136,13 @@ define ADD_YACC_RULE
 %.o:%_p.h
 endef
 
-# ADD_SWIG_RULE - Parameterized "function" for pattern rules to generate cpp files
-#   from swig inputs. The second argument is the swig .i file. The third argument is
-#   the target directory. Argument four is the swig macro.
+# ADD_SWIG_PYTHON_RULE - Parameterized "function" for pattern rules to generate cpp files
+#   from SWIG inputs. The second argument is the SWIG .i file. The third argument is
+#   the target directory. Argument four is the SWIG macro.
 #
 #   USE WITH EVAL
 #
-define ADD_SWIG_RULE
+define ADD_SWIG_PYTHON_RULE
 $(addprefix ${1}/,%_pywrap.cxx) $(addprefix ${3}/,%.py): $(addprefix ${1}/,${2})
 	$(Q)${4}
 $(addprefix ${3}/,%.py) : $(addprefix ${1}/,%_pywrap.cxx)
@@ -150,6 +150,18 @@ $(addprefix ${3}/,%.py) : $(addprefix ${1}/,%_pywrap.cxx)
 $(addprefix ${1}/,%_wrap.cxx) $(addprefix ${3}/,%.py): $(addprefix ${1}/,${2})
 	$(Q)${4}
 $(addprefix ${3}/,%.py) : $(addprefix ${1}/,%_wrap.cxx)
+endef
+
+# ADD_SWIG_TCL_RULE - Parameterized "function" for pattern rules to generate cpp files
+#   from SWIG inputs. The second argument is the SWIG .i file. The third argument is
+#   the target directory. Argument four is the SWIG macro.
+#
+#   USE WITH EVAL
+#
+define ADD_SWIG_TCL_RULE
+$(addprefix ${1}/,%_tclwrap.cxx) $(addprefix ${3}/,%.tcl): $(addprefix ${1}/,${2})
+	$(Q)${4}
+$(addprefix ${3}/,%.tcl) : $(addprefix ${1}/,%_tclwrap.cxx)
 endef
 
 # ADD_DEP - Parameterized "function" do add a generic "this before that" step
@@ -291,6 +303,10 @@ define COMPILE_CXX_CMDS
 		sed -e 's#_pywrap\.cxx#\.i#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
 		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
 	)
+	$(Q)$(if $(findstring _tclwrap,$(strip $@)),\
+		sed -e 's#_tclwrap\.cxx#\.i#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
+		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
+	)
 	$(Q)$(if $(findstring _l.,$(strip $@)),\
 		sed -e 's#_l\.cxx#\.l#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
 		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
@@ -319,13 +335,21 @@ define GENERATE_YACC_CMDS
 	$(Q)$(strip ${YACC} ${YACC_FLAGS} --defines=$(call CANONICAL_PATH,$(dir $@)/$(subst .y,_p.h,$(notdir $<))) -o ${@:.h=.cxx}  $<)
 endef
 
-# GENERATE_SWIG_CMDS - Commands for calling swig to generate C++ and python.
-#$(Q)$(strip ${SWIG}  -c++ -python -o $(subst /$(VCO)/,/src/,${@:.py=${PYEXT}}) -outdir ${TGTDIR} ${SRC_INCDIRS} ${INCDIRS} ${SWIG_FLAGS} $<);
-define GENERATE_SWIG_CMDS
-	@echo swig $@...
+# GENERATE_SWIG_PYTHON_CMDS - Commands for calling SWIG to generate C++ and Python and Tcl.
+#$(Q)$(strip ${SWIG}  -c++ -python -o $(subst /$(VCO)/,/src/,${@:.py=${PYEXT}}) -outdir ${TGTDIR} ${SRC_INCDIRS} ${INCDIRS} ${SWIG_PYTHON_FLAGS} $<);
+define GENERATE_SWIG_PYTHON_CMDS
+	@echo SWIG $@...
 	$(Q)mkdir -p $(dir $@)
 	$(Q)mkdir -p ${TGTDIR}
-	$(Q)$(strip ${SWIG}  -c++ -python -o ${@} -outdir ${TGTDIR} ${SRC_INCDIRS} ${INCDIRS} ${SWIG_FLAGS} $<);
+	$(Q)$(strip ${SWIG}  -c++ -python -o ${@} -outdir ${TGTDIR} ${SRC_INCDIRS} ${INCDIRS} ${SWIG_PYTHON_FLAGS} $<);
+endef
+
+# GENERATE_SWIG_TCL_CMDS - Commands for calling SWIG to generate C++ and Tcl and Tcl.
+define GENERATE_SWIG_TCL_CMDS
+	@echo SWIG $@...
+	$(Q)mkdir -p $(dir $@)
+	$(Q)mkdir -p ${TGTDIR}
+	$(Q)$(strip ${SWIG}  -c++ -tcl -o ${@} -outdir ${TGTDIR} ${SRC_INCDIRS} ${INCDIRS} ${SWIG_TCL_FLAGS} $<);
 endef
 
 # GENERATE_RCC_CMDS - Commands for packaging Qt resource files
@@ -365,7 +389,8 @@ define INCLUDE_SUBMAKEFILE
     SRC_INCDIRS   :=
     SRC_NEEDS_MOC :=
     SRC_DEPENDS_ON_YACC :=
-    SRC_SWIG_FLAGS := -keyword -builtin
+    SRC_SWIG_PYTHON_FLAGS := -keyword -builtin
+    SRC_SWIG_TCL_FLAGS :=
     SRC_MOC_FLAGS :=
     SRC_VPATH     :=
     UI_NAMES      :=
@@ -465,7 +490,8 @@ define INCLUDE_SUBMAKEFILE
         #$${TGT}_PREREQS   := $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
         $${TGT}_PREREQS   := $${TGT_PREREQS}
         $${TGT}_PLUG_INFO :=
-        $${TGT}_SWIG_FLAGS := $${SRC_SWIG_FLAGS}
+        $${TGT}_SWIG_PYTHON_FLAGS := $${SRC_SWIG_PYTHON_FLAGS}
+        $${TGT}_SWIG_TCL_FLAGS := $${SRC_SWIG_TCL_FLAGS}
         $${TGT}_MOC_FLAGS := $${SRC_MOC_FLAGS}
         $${TGT}_EXPORTDIR := $${EXPORT_DIR}
     else
@@ -490,7 +516,8 @@ define INCLUDE_SUBMAKEFILE
 #        endif
         #$${TGT}_PREREQS   += $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
         $${TGT}_PREREQS   += $${TGT_PREREQS}
-        $${TGT}_SWIG_FLAGS := $${SRC_SWIG_FLAGS}
+        $${TGT}_SWIG_PYTHON_FLAGS := $${SRC_SWIG_PYTHON_FLAGS}
+        $${TGT}_SWIG_TCL_FLAGS := $${SRC_SWIG_TCL_FLAGS}
         $${TGT}_MOC_FLAGS := $${SRC_MOC_FLAGS}
     endif
 
@@ -539,7 +566,8 @@ define INCLUDE_SUBMAKEFILE
         $${OBJS}: SRC_CXXFLAGS := $${$${TGT}_CXXFLAGS} $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS     := $$(addprefix -D,$${$${TGT}_DEFS} $${SRC_DEFS})
         $${OBJS}: SRC_INCDIRS  := $$(addprefix -I,$$(filter-out -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})) $$(filter -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})
-        $${OBJS}: SWIG_FLAGS   := $${$${TGT}_SWIG_FLAGS}
+        $${OBJS}: SWIG_PYTHON_FLAGS   := $${$${TGT}_SWIG_PYTHON_FLAGS}
+        $${OBJS}: SWIG_TCL_FLAGS   := $${$${TGT}_SWIG_TCL_FLAGS}
         $${OBJS}: MOC_FLAGS    := $${$${TGT}_MOC_FLAGS}
         $${OBJS}: YACC_FLAGS   := $${YACC_FLAGS}
         $${OBJS}: TGTDIR       := $${$${TGT}_TGTDIR}
@@ -547,7 +575,7 @@ define INCLUDE_SUBMAKEFILE
             PYOUT := $$(addprefix $${$${TGT}_TGTDIR}/,$$(patsubst %_wrap.cxx,%.py,$$(notdir $$(strip $$(filter %_wrap.cxx,$${SOURCES})))))
             $${PYOUT}: PYEXT := _wrap.cxx
             $${PYOUT}: TGTDIR :=  $${$${TGT}_TGTDIR}
-            $${PYOUT}: SWIG_FLAGS := $${$${TGT}_SWIG_FLAGS}
+            $${PYOUT}: SWIG_PYTHON_FLAGS := $${$${TGT}_SWIG_PYTHON_FLAGS}
             $${PYOUT}: SRC_INCDIRS :=$$(addprefix -I,\
                                      $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
         endif
@@ -555,8 +583,16 @@ define INCLUDE_SUBMAKEFILE
             PYOUT := $$(addprefix $${$${TGT}_TGTDIR}/,$$(patsubst %_pywrap.cxx,%.py,$$(notdir $$(strip $$(filter %_pywrap.cxx,$${SOURCES})))))
             $${PYOUT}: PYEXT := _pywrap.cxx
             $${PYOUT}: TGTDIR :=  $${$${TGT}_TGTDIR}
-            $${PYOUT}: SWIG_FLAGS := $${$${TGT}_SWIG_FLAGS}
+            $${PYOUT}: SWIG_PYTHON_FLAGS := $${$${TGT}_SWIG_PYTHON_FLAGS}
             $${PYOUT}: SRC_INCDIRS :=$$(addprefix -I,\
+                                     $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
+        endif
+        ifneq "$$(strip $$(filter %_tclwrap.cxx,$${SOURCES}))" ""
+            TCLOUT := $$(addprefix $${$${TGT}_TGTDIR}/,$$(patsubst %_tclwrap.cxx,%.tcl,$$(notdir $$(strip $$(filter %_tclwrap.cxx,$${SOURCES})))))
+            $${TCLOUT}: TCLEXT := _tclwrap.cxx
+            $${TCLOUT}: TGTDIR :=  $${$${TGT}_TGTDIR}
+            $${TCLOUT}: SWIG_TCL_FLAGS := $${$${TGT}_SWIG_TCL_FLAGS}
+            $${TCLOUT}: SRC_INCDIRS :=$$(addprefix -I,\
                                      $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
         endif
     endif
@@ -777,15 +813,19 @@ $(foreach TGT,${ALL_TGTS},\
                              ${LEX_SRC_EXT},\
                              $${GENERATE_LEX_CMDS})))
 
-# Include swig sources
+# Include SWIG sources
 $(foreach TGT,${ALL_TGTS},\
   $(foreach SRCDIR,${${TGT}_SRCDIRS},\
   $(if $(and $(wildcard $(addprefix ${SRCDIR}/,*.i)),$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i)))))),\
-    $(eval $(call ADD_SWIG_RULE,$(strip ${SRCDIR}),\
+    $(eval $(call ADD_SWIG_PYTHON_RULE,$(strip ${SRCDIR}),\
                                   $(strip ${SWIG_SRC_EXT}),\
                                   ${${TGT}_TGTDIR},\
-                                  $${GENERATE_SWIG_CMDS}))\
-    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py),$(addprefix ${${TGT}_EXPORTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py)))\
+                                  $${GENERATE_SWIG_PYTHON_CMDS}))\
+    $(eval $(call ADD_SWIG_TCL_RULE,$(strip ${SRCDIR}),\
+                                  $(strip ${SWIG_SRC_EXT}),\
+                                  ${${TGT}_TGTDIR},\
+                                  $${GENERATE_SWIG_TCL_CMDS}))\
+    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py),$(addprefix ${${TGT}_EXPORTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py),$(addprefix ${${TGT}_TGTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).tcl),$(addprefix ${${TGT}_EXPORTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).tcl)))\
   )\
 ))
 
