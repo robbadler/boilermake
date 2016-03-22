@@ -145,7 +145,7 @@ fi
 if [ -z "$PROJECT_NAME" ]
 then
     pushd $DOT_GIT > /dev/null
-    PROJECT_NAME=`git remote get-url --all origin | sed -e 's?.*/\([^/]*\)$?\1?' | cut -d. -f1`
+    PROJECT_NAME=`git remote get-url --all origin 2>/dev/null | sed -e 's?.*/\([^/]*\)$?\1?' | cut -d. -f1`
     popd > /dev/null
 fi
 if [ -z "$PROJECT_NAME" ]
