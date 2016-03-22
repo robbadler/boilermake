@@ -8,7 +8,7 @@
 #   LOON_HOME=/net/bokeh/scratch1/rei/loon
 #   export LOON_HOME
 #
-LOON_HOME ?= /wv/sarge/exports/loon_1_3_4.$(VCO)
+LOON_HOME ?= /wv/sarge/exports/loon_1_3_5.$(VCO)
 LOON_INCDIRS = $(LOON_HOME)/include
 LOON_LIBDIR =  -L$(LOON_HOME)/lib
 LOON_LIB = -lloon
