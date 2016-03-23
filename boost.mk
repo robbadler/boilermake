@@ -1,12 +1,9 @@
 
-BOOST_BASEDIR := $(MGC_HOME)/shared/pkgs/boost_inhouse/boost_ext
-BOOST_149_BASEDIR := $(BOOST_BASEDIR)
+BOOST_BASEDIR := /project/dsm/cicd/icf_wg_server/fw_ic/boost/exports.v1-49_0-0-1_engr-$(VCO)/mgc_home
 
-BOOST_INCDIRS := $(BOOST_BASEDIR)/include
-BOOST_149_INCDIRS := $(BOOST_149_BASEDIR)/include
+BOOST_INCDIRS := $(BOOST_BASEDIR)/shared/pkgs/boost_inhouse.$(VCO)/boost_ext/include
 
-BOOST_INCLUDES := -isystem$(BOOST_INCDIR)
-BOOST_149_INCLUDES := -isystem$(BOOST_149_INCDIRS)
+BOOST_INCLUDES := -isystem$(BOOST_INCDIRS)
 
-BOOST_LIBDIR := -L$(MGC_HOME)/pkgs/boost/lib
-BOOST_149_LIBDIR := -L$(BOOST_149_BASEDIR)/lib
+BOOST_LIBDIR := -L$(BOOST_BASEDIR)/pkgs/boost.$(VCO)/lib
+

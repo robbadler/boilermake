@@ -100,9 +100,6 @@ SUBMAKEFILES := ${ROOT}/src.mk
 # NOTE: intermediate must take full files, not patterns
 #.INTERMEDIATE:
 
-# MOC Rules
-MOC = $(MGC_HOME)/bin/moc
-
 # LEX Rules
 LEX = /project/dsm/cicd/tools/Flex-2.5.35/aof/flex-2.5.35/bin/flex
 
@@ -112,11 +109,6 @@ YACC = /project/dsm/cicd/tools/bison/aof/bison-2.5/bin/bison
 # SWIG
 SWIG = /project/dsm/cicd/tools/SWIG/swig-2.0.7_installed/bin/swig
 
-# RCC
-RCC = $(MGC_HOME)/bin/rcc
-
-# Qt UIC
-UIC = $(MGC_HOME)/bin/uic
 
 # Router Interface Generator
 IFGEN = $(MGC_HOME)/bin/ifgen

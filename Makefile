@@ -269,7 +269,8 @@ endef
 define COMPILE_C_CMDS
 	@echo $(strip ${CC}) $(notdir $@)...
 	$(QUIET)mkdir -p $(dir $@)
-	$(QUIET)$(strip ${CC} -o $@ -c -MMD -MF $(addsuffix .d,$(basename $@)) ${CFLAGS} ${SRC_CFLAGS} ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
+	$(QUIET)$(strip ${CC} -o $@ -c -MMD -MF $(addsuffix .d,$(basename $@)) ${CFLAGS} ${SRC_CFLAGS} \
+	     ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
 	     ${SRC_DEFS} ${DEFS} $<)
 	$(QUIET)cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
 	$(QUIET)sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
@@ -282,7 +283,8 @@ endef
 define COMPILE_CXX_CMDS
 	@echo $(strip ${CXX}) $(notdir $@)...
 	$(QUIET)mkdir -p $(dir $@)
-	$(strip ${PREFIX_CMD} ${CXX} -o $@ -c -MMD -MT $@ -MF $(addsuffix .d,$(basename $@)) ${CXXFLAGS} ${SRC_CXXFLAGS} ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
+	$(strip ${PREFIX_CMD} ${CXX} -o $@ -c -MMD -MT $@ -MF $(addsuffix .d,$(basename $@)) ${CXXFLAGS} ${SRC_CXXFLAGS} \
+	    ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
 	    ${SRC_DEFS} ${DEFS} $<)
 	cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
 	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
@@ -516,8 +518,9 @@ define INCLUDE_SUBMAKEFILE
         endif
         SOURCES     := $$(call QUALIFY_PATH,$${DIR},$${SOURCES})
         SOURCES     := $$(call CANONICAL_PATH,$${SOURCES})
-        SRC_INCDIRS := $$(call QUALIFY_PATH,$${DIR},$${SRC_INCDIRS})
-        SRC_INCDIRS := $$(call CANONICAL_PATH,$${SRC_INCDIRS})
+        SRC_SYSINCS := $$(filter -isystem%,$${SRC_INCDIRS})
+        SRC_INCDIRS := $$(call QUALIFY_PATH,$${DIR},$$(filter-out -isystem%,$${SRC_INCDIRS}))
+        SRC_INCDIRS := $$(call CANONICAL_PATH,$${SRC_INCDIRS}) $${SRC_SYSINCS}
 
         # Save the list of source files for this target.
         $${TGT}_SOURCES += $${SOURCES}
@@ -541,7 +544,9 @@ define INCLUDE_SUBMAKEFILE
         $${OBJS}: SRC_CFLAGS   := $${$${TGT}_CFLAGS} $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${$${TGT}_CXXFLAGS} $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS     := $$(addprefix -D,$${$${TGT}_DEFS} $${SRC_DEFS})
-        $${OBJS}: SRC_INCDIRS  := $$(addprefix -I,$$(filter-out -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})) $$(filter -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})
+        $${OBJS}: SRC_INCDIRS  := $$(addprefix -I,$$(filter-out -isystem%,$$(filter-out -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}))) \
+                                     $$(filter -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}) \
+                                     $$(filter -isystem%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})
         $${OBJS}: SWIG_FLAGS   := $${$${TGT}_SWIG_FLAGS}
         $${OBJS}: MOC_FLAGS    := $${$${TGT}_MOC_FLAGS}
         $${OBJS}: YACC_FLAGS   := $${YACC_FLAGS}
@@ -551,16 +556,20 @@ define INCLUDE_SUBMAKEFILE
             $${PYOUT}: PYEXT := _wrap.cxx
             $${PYOUT}: TGTDIR :=  $${$${TGT}_TGTDIR}
             $${PYOUT}: SWIG_FLAGS := $${$${TGT}_SWIG_FLAGS}
-            $${PYOUT}: SRC_INCDIRS :=$$(addprefix -I,\
-                                     $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
+            $${PYOUT}: SRC_INCDIRS :=$$(addprefix -I,$$(filter-out -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}) \
+                                                     $$(filter-out -isystem%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})) \
+                                     $$(filter -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}) \
+                                     $$(filter -isystem%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})
         endif
         ifneq "$$(strip $$(filter %_pywrap.cxx,$${SOURCES}))" ""
             PYOUT := $$(addprefix $${$${TGT}_TGTDIR}/,$$(patsubst %_pywrap.cxx,%.py,$$(notdir $$(strip $$(filter %_pywrap.cxx,$${SOURCES})))))
             $${PYOUT}: PYEXT := _pywrap.cxx
             $${PYOUT}: TGTDIR :=  $${$${TGT}_TGTDIR}
             $${PYOUT}: SWIG_FLAGS := $${$${TGT}_SWIG_FLAGS}
-            $${PYOUT}: SRC_INCDIRS :=$$(addprefix -I,\
-                                     $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
+            $${PYOUT}: SRC_INCDIRS :=$$(addprefix -I,$$(filter-out -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}) \
+                                                     $$(filter-out -isystem%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})) \
+                                     $$(filter -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}) \
+                                     $$(filter -isystem%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})
         endif
     endif
 
