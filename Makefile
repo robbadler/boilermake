@@ -390,7 +390,7 @@ define INCLUDE_SUBMAKEFILE
     SRC_NEEDS_MOC :=
     SRC_DEPENDS_ON_YACC :=
     SRC_SWIG_PYTHON_FLAGS := -keyword -builtin
-    SRC_SWIG_TCL_FLAGS :=
+    SRC_SWIG_TCL_FLAGS := -namespace
     SRC_MOC_FLAGS :=
     SRC_VPATH     :=
     UI_NAMES      :=

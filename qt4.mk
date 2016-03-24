@@ -1,5 +1,3 @@
-# When changing this file, ensure that ../App/rook.sh is updated with the same values.
-
 # Qt install dir
 QT_HOME := /wv/ic_wg_server/ic/qt/exports.v0-0_3-10-2015_engr-$(VCO)/mgc_home
 
