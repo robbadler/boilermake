@@ -225,7 +225,6 @@ if [ ! -d $DST_SPECIFIC/include/$PROJECT_NAME ]
 then
     mkdir -p $DST_SPECIFIC/include/$PROJECT_NAME
 fi
-ls -l $DST_SPECIFIC/include/$PROJECT_NAME
 for SRC_HEADER in `find $SRC/* -type f \( -name '*.h' -o -name '*.i' \) -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if grep -E '\\ingroup[     ]+public_api' $SRC_HEADER >/dev/null 2>&1
