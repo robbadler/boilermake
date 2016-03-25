@@ -220,6 +220,11 @@ define ADD_TARGET_RULE
 	     @mkdir -p $$(dir $$@)
 	     $(Q)$$(strip $${AR} $${ARFLAGS} $$@ $${${1}_OBJS})
 	     $${${1}_POSTMAKE}
+    else ifeq "$$(suffix ${1})" ".sh"
+        # Add a target as a stub so that the rule in the submakefile
+        # will be properly recognized. Without this stub, the rule
+        # in the submakefile will never get called.
+        $${${1}_TGTDIR}/${1}: $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
     else
         # Add a target for linking an executable. First, attempt to select the
         # appropriate front-end to use for linking. This might not choose the
@@ -311,10 +316,10 @@ define COMPILE_CXX_CMDS
 		sed -e 's#_l\.cxx#\.l#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
 		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
 	)
-	#$(Q)#$(if $(findstring _p,$(strip $@)),\
-	#	sed -e 's#.*_p\.cxx##' -e 's#.*_p\.h##' -e '/^[[:space:]]\\/ d' -e '/^[[:space:]]:/ d' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
-	#	mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
-	#)
+#	$(Q)#$(if $(findstring _p,$(strip $@)),\
+#		sed -e 's#.*_p\.cxx##' -e 's#.*_p\.h##' -e '/^[[:space:]]\\/ d' -e '/^[[:space:]]:/ d' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
+#		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
+#	)
 endef
 
 # GENERATE_MOC_CMDS - Command for calling Qt moc on inputs to create C++ code
@@ -430,7 +435,7 @@ define INCLUDE_SUBMAKEFILE
         TARGET_DIR := $$(call CANONICAL_PATH,$$(addprefix $${TARGET_DIR_BASE}/,$${TARGET_DIR}))
     endif
 
-	#TARGET_DIR := $$(subst src,$$(VCO),$$(DIR))
+#	TARGET_DIR := $$(subst src,$$(VCO),$$(DIR))
 
 #    TARGET_DIR_STACK := $$(call PUSH,$${TARGET_DIR_STACK},$${TARGET_DIR})
 	 #TARGET_DIR := $$(call PEEK,$${TARGET_DIR_STACK})
@@ -613,7 +618,7 @@ define INCLUDE_SUBMAKEFILE
 	 endif
 
 	 ifneq "$$(strip $${SRC_NEEDS_MOC})" ""
-		# Create a target/src specific variable to moc the headers listed
+#		Create a target/src specific variable to moc the headers listed
 		$${TGT}_NEEDS_MOC += $$(call CANONICAL_PATH,$$(call QUALIFY_PATH,$${DIR},$${SRC_NEEDS_MOC}))
 	 endif
 
@@ -869,5 +874,3 @@ $(foreach TGT,${ALL_TGTS},\
 #                                      $(patsubst %.ui,%.o,$(notdir ${UI})))]));
 
 $(eval $(info Done adding rules. Dependency graph starting...))
-
-
