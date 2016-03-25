@@ -12,5 +12,5 @@ TCL_HOME := /project/dsm/cicd/icf_wg_server/ic/tcl86/exports.v8-6_0-0-1_engr-$(V
 TCL_INCDIRS  := $(TCL_HOME)/shared/pkgs/tcl86_inhouse.$(VCO)/include/tcl8.6
 TCL_INCLUDES := -isystem$(TCL_INCDIRS)
 TCL_LIBDIR   := -L$(TCL_HOME)/pkgs/tcl86.$(VCO)/lib
-TCL_LIB      := -ltcl
+TCL_LIB      := -ltcl8.6
 endif
