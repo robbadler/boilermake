@@ -43,8 +43,8 @@ QT_INCLUDES := -isystem$(QT_INCDIRS)
 
 # Link
 QT_LIBDIR   := -L$(QT_HOME)/lib
-QT_CORE_LIB := -lQt5Core -lQt5Xml
-QT_GUI_LIB  := -lQt5Gui $(QT_CORE_LIB)
+QT_CORE_LIB := -lQt5Core -lQt5Xml -lQt5Concurrent
+QT_GUI_LIB  := -lQt5Widgets -lQt5Gui $(QT_CORE_LIB)
 QT_NETWORK_LIB := -lQt5Network $(QT_GUI_LIB)
 QT_TEST_LIB  := -lQt5Test $(QT_GUI_LIB)
 endif
