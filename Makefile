@@ -314,7 +314,7 @@ endef
 # GENERATE_MOC_CMDS - Command for calling Qt moc on inputs to create C++ code
 define GENERATE_MOC_CMDS
 	@echo moc $@...
-	$(QUIET)$(strip ${DISTCC_BIN} ${MOC} -nw ${MOC_FLAGS} -o $@ ${SRC_INCDIRS} ${INCDIRS} $<)
+	$(QUIET)$(strip ${DISTCC_BIN} ${MOC} -nw ${MOC_FLAGS} -o $@ $(patsubst -isystem%,-I%,${SRC_INCDIRS}) ${INCDIRS} $<)
 endef
 
 # GENERATE_LEX_CMDS - Command for calling lex to generate C++ code

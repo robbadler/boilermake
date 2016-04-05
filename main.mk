@@ -55,6 +55,7 @@ endif
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
 CXXFLAGS += $(CXXFLAGS_DBG)
+OPT = 0
 endif
 
 OPT ?= 1
