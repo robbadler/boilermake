@@ -169,13 +169,9 @@ include tao.mk
 include petsc.mk
 
 INCDIRS := \
-			  $(QT_INCDIRS) \
-			  $(LOG4CXX_INCDIRS) \
 			  $(ICFOA_INCDIRS) \
 			  $(BOOST_INCDIRS) \
-			  $(PYTHON_INCDIRS) \
 			  /project/dsm/cicd/tools/pyxis/loki-0.1.7/include/loki \
 			  $(MGC_HOME)/shared/include
-#			  $(MGC_HOME)/shared/include/DomainAPI
 
 $(eval $(info Done reading main.mk))
