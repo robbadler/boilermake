@@ -225,6 +225,7 @@ define ADD_TARGET_RULE
         # will be properly recognized. Without this stub, the rule
         # in the submakefile will never get called.
         $${${1}_TGTDIR}/${1}: $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
+	     @mkdir -p $$(dir $$@)
     else
         # Add a target for linking an executable. First, attempt to select the
         # appropriate front-end to use for linking. This might not choose the
