@@ -283,7 +283,7 @@ endef
 define COMPILE_CXX_CMDS
 	@echo $(strip ${CXX}) $(notdir $@)...
 	$(QUIET)mkdir -p $(dir $@)
-	$(strip ${PREFIX_CMD} ${CXX} -o $@ -c -MMD -MT $@ -MF $(addsuffix .d,$(basename $@)) ${CXXFLAGS} ${SRC_CXXFLAGS} \
+	$(strip ${PREFIX_CMD} ${CXX} -o $@ -c -fpch-preprocess -MMD -MT $@ -MF $(addsuffix .d,$(basename $@)) ${CXXFLAGS} ${SRC_CXXFLAGS} \
 	    ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
 	    ${SRC_DEFS} ${DEFS} $<)
 	cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
