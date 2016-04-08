@@ -5,5 +5,5 @@ BOOST_INCDIRS := $(BOOST_BASEDIR)/shared/pkgs/boost_inhouse.$(VCO)/boost_ext/inc
 
 BOOST_INCLUDES := -isystem$(BOOST_INCDIRS)
 
-BOOST_LIBDIR := -L$(BOOST_BASEDIR)/pkgs/boost.$(VCO)/lib
+BOOST_LIBDIR := -Wl,-rpath-link=$(BOOST_BASEDIR)/pkgs/boost.$(VCO)/lib -L$(BOOST_BASEDIR)/pkgs/boost.$(VCO)/lib
 

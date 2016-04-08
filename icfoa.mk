@@ -17,7 +17,8 @@ ICFOA_INCDIRS := $(ICFOA_HOME)/shared/pkgs/icfoa_inhouse.$(VCO)/OA/include/oa \
 
 ICFOA_INCLUDES := $(addprefix -isystem,$(ICFOA_INCDIRS))
 
-ICFOA_LIBDIR := -L$(ICFOA_HOME)/pkgs/icfoa.$(VCO)/OA/lib/linux_rhel40_64/$(OA_TYPE)
+ICFOA_LIBDIR := -Wl,-rpath-link=$(ICFOA_HOME)/pkgs/icfoa.$(VCO)/OA/lib/linux_rhel40_64/$(OA_TYPE) \
+                -L$(ICFOA_HOME)/pkgs/icfoa.$(VCO)/OA/lib/linux_rhel40_64/$(OA_TYPE)
 ICFOA_FULL_LIB :=	-loaBase \
 			-loaCommon \
 			-loaDM \
