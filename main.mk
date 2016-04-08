@@ -80,11 +80,10 @@ BUILD_DIR := build
 BUILD_DIR := $(addprefix ${CWD},${BUILD_DIR})
 
 EXPORT_DIR_BASE := $(MGC_HOME)/lib
-#TARGET_DIR := /net/swallow/scratch1/iwa/osprey/nonRecursiveMake/boilermake/targs
-LDFLAGS :=	-L. \
-				-L$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
-            -Wl,-rpath-link=. \
-            -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk
+LDFLAGS := \
+           -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
+           -L$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
+
 
 ## HOWTO DET EXPORT
 #link_pkg_vco -src exports/mgc_home
@@ -110,17 +109,7 @@ YACC = /project/dsm/cicd/tools/bison/aof/bison-2.5/bin/bison
 # SWIG
 SWIG = /project/dsm/cicd/tools/SWIG/swig-2.0.7_installed/bin/swig
 
-
-# Router Interface Generator
-IFGEN = $(MGC_HOME)/bin/ifgen
-
-# Router Header Generator
-PROPGEN = $(MGC_HOME)/bin/xml2h.pl
-
-# Router Message Generator
-MSGGEN = $(MGC_HOME)/bin/xml2msg.pl
-
-# CoreGeom from Infrastructure (temp)
+# CoreGeom
 include coreGeom.mk
 
 # Cryptopp
@@ -150,9 +139,6 @@ include mgls.mk
 # OLH
 include olh.mk
 
-# RealTime Calibre
-include rtc.mk
-
 # Calibre Client
 include calibre.mk
 
@@ -171,7 +157,6 @@ include petsc.mk
 INCDIRS := \
 			  $(ICFOA_INCDIRS) \
 			  $(BOOST_INCDIRS) \
-			  /project/dsm/cicd/tools/pyxis/loki-0.1.7/include/loki \
-			  $(MGC_HOME)/shared/include
+			  /project/dsm/cicd/tools/pyxis/loki-0.1.7/include/loki
 
 $(eval $(info Done reading main.mk))
