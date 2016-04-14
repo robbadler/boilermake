@@ -1,4 +1,4 @@
-QT_VERSION ?= 5
+QT_VERSION ?= 4
 
 # Qt 5 is only built and exported for aoi at this time.
 ifeq "$(findstring _$(VCO)_,_aof_aog_aoh_)" "_$(VCO)_"
