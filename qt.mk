@@ -1,4 +1,10 @@
-QT_VERSION ?= 4
+QT_VERSION ?= 5
+
+# Qt 5 is only built and exported for aoi at this time.
+ifeq "$(findstring _$(VCO)_,_aof_aog_aoh_)" "_$(VCO)_"
+   QT_VERSION := 4
+endif
+
 ifneq ($(QT_VERSION), 5)
 # Qt install dir
 QT_HOME := /wv/ic_wg_server/ic/qt/exports.v0-0_3-10-2015_engr-$(VCO)/mgc_home
@@ -25,10 +31,10 @@ QT_NETWORK_LIB := -lQtNetwork $(QT_GUI_LIB)
 QT_TEST_LIB  := -lQtTest $(QT_GUI_LIB)
 else
 # Qt install dir
-QT_HOME := /wv/calibre_3rdparty/QT/qt-5.6.0/$(VCO)
+QT_HOME := /wv/cal_wg_server/ic/qt5/exports.v0-0_4-8-2016_engr-$(VCO)/mgc_home
 
 # Qt binaries
-QT_BIN := $(QT_HOME)/bin
+QT_BIN := $(QT_HOME)/shared/pkgs/icv_qt5_comp_inhouse.$(VCO)/bin
 
 # Meta-Object Compiler
 MOC = $(QT_BIN)/moc
@@ -38,11 +44,11 @@ RCC = $(QT_BIN)/rcc
 UIC = $(QT_BIN)/uic
 
 # Compile
-QT_INCDIRS := $(QT_HOME)/include
+QT_INCDIRS := $(QT_HOME)/shared/pkgs/icv_qt5_comp_inhouse.$(VCO)/include
 QT_INCLUDES := -isystem$(QT_INCDIRS)
 
 # Link
-QT_LIBDIR   := -L$(QT_HOME)/lib
+QT_LIBDIR   := -L$(QT_HOME)/pkgs/icv_lib.$(VCO)/lib64
 QT_CORE_LIB := -lQt5Core -lQt5Xml -lQt5Concurrent
 QT_GUI_LIB  := -lQt5Widgets -lQt5Gui $(QT_CORE_LIB)
 QT_NETWORK_LIB := -lQt5Network $(QT_GUI_LIB)
