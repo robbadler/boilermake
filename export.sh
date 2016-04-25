@@ -135,6 +135,17 @@ then
     echo "$DST is not a directory" >&2
     exit 1
 fi
+
+if [ -z "$VCO" ]
+then
+    VCO=`mgcvco`
+fi
+if [ -z "$VCO" ]
+then
+    echo "Unable to determine VCO" >&2
+    exit 1
+fi
+
 # Determine the project name.
 DOT_GIT=`find $SRC -type d -name .git -print | head -1`
 if [ -z "$DOT_GIT" ]
@@ -196,10 +207,15 @@ then
     COMMAND=ensure_link
     PRESENT_PARTICIPLE="Linking"
     DST_SPECIFIC=$DST
+
+    # Remove any extant symbolic links, except under boilermake.
+    find $SRC -type d -name boilermake -prune -o -type l -exec rm -f {} \;
 else
     COMMAND=cp
     PRESENT_PARTICIPLE="Copying"
     DST_SPECIFIC=$DST/${PROJECT_NAME}_${MAJOR_VERSION}_${MINOR_VERSION}_${PATCH_VERSION}.${VCO}
+
+    # Ensure that the destination specific directory exists.
     if [ ! -d $DST_SPECIFIC ]
     then
         echo "Creating $DST_SPECIFIC"
@@ -209,21 +225,22 @@ else
     fi
 fi
 
-
 # Update the version numbers in the glue files.
 for SRC_VERSION in `find $SRC/* -type f -name 'version' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     sed -i -e "s/\(#define [ ]*RLS_VER \"v\)[0-9][0-9]*\.[0-9][0-9]*\(_.*\)/\1${MAJOR_VERSION}.${MINOR_VERSION}\2/" $SRC_VERSION
 done
 
+# Export header files.
 echo "$PRESENT_PARTICIPLE header files..."
-if [ -f $DST_SPECIFIC/include/$PROJECT_NAME -o -h $DST_SPECIFIC/include/$PROJECT_NAME ]
+INCLUDE_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/include
+if [ -f $INCLUDE_DIR/$PROJECT_NAME -o -h $INCLUDE_DIR/$PROJECT_NAME ]
 then
-    rm -f $DST_SPECIFIC/include/$PROJECT_NAME
+    rm -f $INCLUDE_DIR/$PROJECT_NAME
 fi
-if [ ! -d $DST_SPECIFIC/include/$PROJECT_NAME ]
+if [ ! -d $INCLUDE_DIR/$PROJECT_NAME ]
 then
-    mkdir -p $DST_SPECIFIC/include/$PROJECT_NAME
+    mkdir -p $INCLUDE_DIR/$PROJECT_NAME
 fi
 for SRC_HEADER in `find $SRC/* -type f \( -name '*.h' -o -name '*.i' \) -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
@@ -233,19 +250,19 @@ do
         then
             SUB=`dirname $SRC_HEADER`
             SUB=`basename $SUB`
-            if [ ! -d $DST_SPECIFIC/include/$PROJECT_NAME/$SUB ]
+            if [ ! -d $INCLUDE_DIR/$PROJECT_NAME/$SUB ]
             then
-                mkdir -p $DST_SPECIFIC/include/$PROJECT_NAME/$SUB
+                mkdir -p $INCLUDE_DIR/$PROJECT_NAME/$SUB
             fi
 
-            DST_HEADER=$DST_SPECIFIC/include/$PROJECT_NAME/$SUB/`basename $SRC_HEADER`
+            DST_HEADER=$INCLUDE_DIR/$PROJECT_NAME/$SUB/`basename $SRC_HEADER`
         else
-            if [ ! -d $DST_SPECIFIC/include/$PROJECT_NAME ]
+            if [ ! -d $INCLUDE_DIR/$PROJECT_NAME ]
             then
-                mkdir -p $DST_SPECIFIC/include/$PROJECT_NAME
+                mkdir -p $INCLUDE_DIR/$PROJECT_NAME
             fi
 
-            DST_HEADER=$DST_SPECIFIC/include/$PROJECT_NAME/`basename $SRC_HEADER`
+            DST_HEADER=$INCLUDE_DIR/$PROJECT_NAME/`basename $SRC_HEADER`
         fi
         if [ -f $DST_HEADER ]
         then
@@ -257,16 +274,18 @@ do
     fi
 done
 
+# Export source files.
 if [ 0 -ne $SOURCE ]
 then
     echo "$PRESENT_PARTICIPLE source files..."
-    if [ -f $DST_SPECIFIC/source/$PROJECT_NAME -o -h $DST_SPECIFIC/source/$PROJECT_NAME ]
+    SRC_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/src
+    if [ -f $SRC_DIR/$PROJECT_NAME -o -h $SRC_DIR/$PROJECT_NAME ]
     then
-        rm -f $DST_SPECIFIC/source/$PROJECT_NAME
+        rm -f $SRC_DIR/$PROJECT_NAME
     fi
-    if [ ! -d $DST_SPECIFIC/source/$PROJECT_NAME ]
+    if [ ! -d $SRC_DIR/$PROJECT_NAME ]
     then
-        mkdir -p $DST_SPECIFIC/source/$PROJECT_NAME
+        mkdir -p $SRC_DIR/$PROJECT_NAME
     fi
     for DIR in `find $SRC/* -type d -prune -print`
     do
@@ -278,19 +297,19 @@ then
                 then
                     SUB=`dirname $SRC_SOURCE`
                     SUB=`basename $SUB`
-                    if [ ! -d $DST_SPECIFIC/source/$PROJECT_NAME/$SUB ]
+                    if [ ! -d $SRC_DIR/$PROJECT_NAME/$SUB ]
                     then
-                        mkdir -p $DST_SPECIFIC/source/$PROJECT_NAME/$SUB
+                        mkdir -p $SRC_DIR/$PROJECT_NAME/$SUB
                     fi
 
-                    DST_SOURCE=$DST_SPECIFIC/source/$PROJECT_NAME/$SUB/`basename $SRC_SOURCE`
+                    DST_SOURCE=$SRC_DIR/$PROJECT_NAME/$SUB/`basename $SRC_SOURCE`
                 else
-                    if [ ! -d $DST_SPECIFIC/source/$PROJECT_NAME ]
+                    if [ ! -d $SRC_DIR/$PROJECT_NAME ]
                     then
-                        mkdir -p $DST_SPECIFIC/source/$PROJECT_NAME
+                        mkdir -p $SRC_DIR/$PROJECT_NAME
                     fi
 
-                    DST_SOURCE=$DST_SPECIFIC/source/$PROJECT_NAME/`basename $SRC_SOURCE`
+                    DST_SOURCE=$SRC_DIR/$PROJECT_NAME/`basename $SRC_SOURCE`
                 fi
                 if [ -f $DST_SOURCE ]
                 then
@@ -304,101 +323,157 @@ then
     done
 fi
 
+# Export library files.
 echo "$PRESENT_PARTICIPLE library files..."
-if [ -f $DST_SPECIFIC/lib -o -h $DST_SPECIFIC/lib ]
+LIB_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/lib
+if [ -f $LIB_DIR -o -h $LIB_DIR ]
 then
-    rm -f $DST_SPECIFIC/lib
+    rm -f $LIB_DIR
 fi
-if [ ! -d $DST_SPECIFIC/lib ]
+if [ ! -d $LIB_DIR ]
 then
-    mkdir -p $DST_SPECIFIC/lib
+    mkdir -p $LIB_DIR
 fi
 for SRC_LIBRARY in `find $SRC/* -type f -name '*.so' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if [ -s $SRC_LIBRARY ]
     then
-        DST_LIBRARY=$DST_SPECIFIC/lib/`basename $SRC_LIBRARY`
+        DST_LIBRARY=$LIB_DIR/`basename $SRC_LIBRARY`
         $COMMAND $SRC_LIBRARY $DST_LIBRARY
         chmod 664 $DST_LIBRARY
     fi
 done
 
+# Export info files.
 echo "$PRESENT_PARTICIPLE info files..."
-if [ ! -d $DST_SPECIFIC/lib ]
+LIB_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/lib
+if [ -f $LIB_DIR -o -h $LIB_DIR ]
 then
-    mkdir -p $DST_SPECIFIC/lib
+    rm -f $LIB_DIR
+fi
+if [ ! -d $LIB_DIR ]
+then
+    mkdir -p $LIB_DIR
 fi
 for SRC_INFO in `find $SRC/* -type f -name '*_info' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if [ -s $SRC_INFO ]
     then
-        DST_INFO=$DST_SPECIFIC/lib/`basename $SRC_INFO`
+        DST_INFO=$LIB_DIR/`basename $SRC_INFO`
         $COMMAND $SRC_INFO $DST_INFO
         chmod 664 $DST_INFO
     fi
 done
 
+# Export executable files.
 echo "$PRESENT_PARTICIPLE executable files..."
-if [ -f $DST_SPECIFIC/bin -o -h $DST_SPECIFIC/bin ]
+BIN_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/bin
+if [ -f $BIN_DIR -o -h $BIN_DIR ]
 then
-    rm -f $DST_SPECIFIC/bin
+    rm -f $BIN_DIR
 fi
-if [ ! -d $DST_SPECIFIC/bin ]
+if [ ! -d $BIN_DIR ]
 then
-    mkdir -p $DST_SPECIFIC/bin
+    mkdir -p $BIN_DIR
+fi
+INHOUSE_BIN_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/bin
+if [ -f $INHOUSE_BIN_DIR -o -h $INHOUSE_BIN_DIR ]
+then
+    rm -f $INHOUSE_BIN_DIR
+fi
+if [ ! -d $INHOUSE_BIN_DIR ]
+then
+    mkdir -p $INHOUSE_BIN_DIR
 fi
 for SRC_EXECUTABLE in `find $SRC/* -type f -name '*.exe' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if [ -s $SRC_EXECUTABLE ]
     then
-        DST_EXECUTABLE=$DST_SPECIFIC/bin/`basename $SRC_EXECUTABLE`
+        if echo $SRC_EXECUTABLE | grep -E '(_ut|_smoke)\.exe' >/dev/null 2>&1
+        then
+            DST_EXECUTABLE=$INHOUSE_BIN_DIR/`basename $SRC_EXECUTABLE`
+        else
+            DST_EXECUTABLE=$BIN_DIR/`basename $SRC_EXECUTABLE`
+        fi
         $COMMAND $SRC_EXECUTABLE $DST_EXECUTABLE
         chmod 775 $DST_EXECUTABLE
     fi
 done
 
+# Export script files.
 echo "$PRESENT_PARTICIPLE script files..."
-if [ ! -d $DST_SPECIFIC/bin ]
+BIN_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/bin
+if [ -f $BIN_DIR -o -h $BIN_DIR ]
 then
-    mkdir -p $DST_SPECIFIC/bin
+    rm -f $BIN_DIR
+fi
+if [ ! -d $BIN_DIR ]
+then
+    mkdir -p $BIN_DIR
+fi
+INHOUSE_BIN_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/bin
+if [ -f $INHOUSE_BIN_DIR -o -h $INHOUSE_BIN_DIR ]
+then
+    rm -f $INHOUSE_BIN_DIR
+fi
+if [ ! -d $INHOUSE_BIN_DIR ]
+then
+    mkdir -p $INHOUSE_BIN_DIR
 fi
 for SRC_SCRIPT in `find $SRC/* -type f -name '*.sh' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if grep -E '\\ingroup[     ]+public_api' $SRC_SCRIPT >/dev/null 2>&1
     then
-        DST_SCRIPT=$DST_SPECIFIC/bin/`basename $SRC_SCRIPT`
+        if echo $SRC_SCRIPT | grep -E '(_ut|_smoke)\.sh' >/dev/null 2>&1
+        then
+            DST_SCRIPT=$INHOUSE_BIN_DIR/`basename $SRC_SCRIPT`
+        else
+            DST_SCRIPT=$BIN_DIR/`basename $SRC_SCRIPT`
+        fi
         $COMMAND $SRC_SCRIPT $DST_SCRIPT
         chmod 775 $DST_SCRIPT
     fi
 done
 
+# Export configuration files.
 echo "$PRESENT_PARTICIPLE configuration files..."
-if [ -f $DST_SPECIFIC/config -o -h $DST_SPECIFIC/config ]
+CONFIG_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/config
+if [ -f $CONFIG_DIR -o -h $CONFIG_DIR ]
 then
-    rm -f $DST_SPECIFIC/config
+    rm -f $CONFIG_DIR
 fi
-if [ ! -d $DST_SPECIFIC/config ]
+if [ ! -d $CONFIG_DIR ]
 then
-    mkdir -p $DST_SPECIFIC/config
+    mkdir -p $CONFIG_DIR
 fi
 for SRC_CONFIGURATION in `find $SRC/* -type f -name '*.profile' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if grep -E '\\ingroup[     ]+public_api' $SRC_CONFIGURATION >/dev/null 2>&1
     then
-        DST_CONFIGURATION=$DST_SPECIFIC/config/`basename $SRC_CONFIGURATION`
+        DST_CONFIGURATION=$CONFIG_DIR/`basename $SRC_CONFIGURATION`
         $COMMAND $SRC_CONFIGURATION $DST_CONFIGURATION
         chmod 664 $DST_CONFIGURATION
     fi
 done
 
+# Export documentation.
 if [ "$DST" != "$SRC" ]
 then
-    echo "Copying documentation..."
+    echo "$PRESENT_PARTICIPLE documentation..."
+    DOC_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/doc
+    if [ -f $DOC_DIR -o -h $DOC_DIR ]
+    then
+        rm -f $DOC_DIR
+    fi
+    if [ ! -d $DOC_DIR ]
+    then
+        mkdir -p $DOC_DIR
+    fi
     for README in `find $SRC/* -prune -type f -regex '^.*/[A-Z][A-Z0-9_]*' -print`
     do
-        cp $README $DST_SPECIFIC
+        cp $README $DOC_DIR
     done
-    rsync -rLptgo --exclude='*.pages' --chmod=a+r,ug+w --delete-delay $SRC/doc $DST_SPECIFIC
+    rsync -rLptgo --exclude='*.pages' --chmod=a+r,ug+w --delete-delay $SRC/doc $DOC_DIR
 fi
 
 echo "Done."
