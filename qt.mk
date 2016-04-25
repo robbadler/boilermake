@@ -53,4 +53,7 @@ QT_CORE_LIB := -lQt5Core -lQt5Xml -lQt5Concurrent
 QT_GUI_LIB  := -lQt5Widgets -lQt5Gui $(QT_CORE_LIB)
 QT_NETWORK_LIB := -lQt5Network $(QT_GUI_LIB)
 QT_TEST_LIB  := -lQt5Test $(QT_GUI_LIB)
+
+# Qt plugins
+QT_PLUGINS := $(QT_HOME)/pkgs/icv_qt5_comp.$(VCO)/plugins
 endif
