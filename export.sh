@@ -263,7 +263,7 @@ then
     INHOUSE_BIN_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/bin
     CONFIG_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/config
     SRC_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/src
-    DOC_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/doc
+    DOC_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO
 else
     INCLUDE_DIR=$DST_SPECIFIC/include
     LIB_DIR=$DST_SPECIFIC/lib
