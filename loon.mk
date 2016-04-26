@@ -9,6 +9,6 @@
 #   export LOON_HOME
 #
 LOON_HOME ?= /wv/sarge/exports/loon_1_4_1.$(VCO)
-LOON_INCDIRS = $(LOON_HOME)/include
-LOON_LIBDIR =  -L$(LOON_HOME)/lib
+LOON_INCDIRS = $(LOON_HOME)/mgc_home/shared/pkgs/loon_inhouse.$(VCO)/include
+LOON_LIBDIR =  -L$(LOON_HOME)/mgc_home/pkgs/loon.$(VCO)/lib
 LOON_LIB = -lloon

@@ -77,11 +77,28 @@ ensure_link () {
         then
             PARENT_DIRECTORY=`dirname $2`
             cd $PARENT_DIRECTORY
-            ln -s `get_relative_path $1 $PARENT_DIRECTORY` `basename $2`
+            if [ $TYPE = "det" ]
+            then
+                ln -s $1 `basename $2`
+            else
+                ln -s `get_relative_path $1 $PARENT_DIRECTORY` `basename $2`
+            fi
         fi
     fi
 }
 
+ensure_directory () {
+    if [ -f $1 -o -h $1 ]
+    then
+        rm -f $1
+    fi
+    if [ ! -d $1 ]
+    then
+        mkdir -p $1
+    fi
+}
+
+TYPE=det
 SRC=
 DST=
 MAJOR_VERSION=
@@ -97,6 +114,12 @@ do
     elif [ "$1" = "-source" ]
     then
         SOURCE=1
+    elif [ "$1" = "-normal" ]
+    then
+        TYPE=normal
+    elif [ "$1" = "-det" ]
+    then
+        TYPE=det
     elif [ -z "$1" ]
     then
         true # Discarding empty command-line argument
@@ -202,6 +225,12 @@ do
     sed -i -e "s/\(\\mainpage.*[^ 	]\)[ 	][ 	]*v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*/\1 v$MAJOR_VERSION.$MINOR_VERSION.$PATCH_VERSION/" $SRC_DOCUMENTATION
 done
 
+# Update the version numbers in the glue files.
+for SRC_VERSION in `find $SRC/* -type f -name 'version' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
+do
+    sed -i -e "s/\(#define [ ]*RLS_VER \"v\)[0-9][0-9]*\.[0-9][0-9]*\(_.*\)/\1${MAJOR_VERSION}.${MINOR_VERSION}\2/" $SRC_VERSION
+done
+
 if [ "$DST" = "$SRC" ]
 then
     COMMAND=ensure_link
@@ -225,23 +254,43 @@ else
     fi
 fi
 
-# Update the version numbers in the glue files.
-for SRC_VERSION in `find $SRC/* -type f -name 'version' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
-do
-    sed -i -e "s/\(#define [ ]*RLS_VER \"v\)[0-9][0-9]*\.[0-9][0-9]*\(_.*\)/\1${MAJOR_VERSION}.${MINOR_VERSION}\2/" $SRC_VERSION
-done
+# Determine the destination directories.
+if [ $TYPE = "det" ]
+then
+    INCLUDE_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/include
+    LIB_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/lib
+    BIN_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/bin
+    INHOUSE_BIN_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/bin
+    CONFIG_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/config
+    SRC_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/src
+    DOC_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/doc
+else
+    INCLUDE_DIR=$DST_SPECIFIC/include
+    LIB_DIR=$DST_SPECIFIC/lib
+    BIN_DIR=$DST_SPECIFIC/bin
+    INHOUSE_BIN_DIR=$DST_SPECIFIC/bin
+    CONFIG_DIR=$DST_SPECIFIC/config
+    SRC_DIR=$DST_SPECIFIC/source
+    DOC_DIR=$DST_SPECIFIC
+fi
+
+# Ensure the destination directories exist.
+ensure_directory $INCLUDE_DIR
+ensure_directory $LIB_DIR
+ensure_directory $BIN_DIR
+ensure_directory $INHOUSE_BIN_DIR
+ensure_directory $CONFIG_DIR
+if [ 0 -ne $SOURCE ]
+then
+    ensure_directory $SRC_DIR
+fi
+if [ "$DST" != "$SRC" ]
+then
+    ensure_directory $DOC_DIR
+fi
 
 # Export header files.
 echo "$PRESENT_PARTICIPLE header files..."
-INCLUDE_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/include
-if [ -f $INCLUDE_DIR/$PROJECT_NAME -o -h $INCLUDE_DIR/$PROJECT_NAME ]
-then
-    rm -f $INCLUDE_DIR/$PROJECT_NAME
-fi
-if [ ! -d $INCLUDE_DIR/$PROJECT_NAME ]
-then
-    mkdir -p $INCLUDE_DIR/$PROJECT_NAME
-fi
 for SRC_HEADER in `find $SRC/* -type f \( -name '*.h' -o -name '*.i' \) -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if grep -E '\\ingroup[     ]+public_api' $SRC_HEADER >/dev/null 2>&1
@@ -278,15 +327,6 @@ done
 if [ 0 -ne $SOURCE ]
 then
     echo "$PRESENT_PARTICIPLE source files..."
-    SRC_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/src
-    if [ -f $SRC_DIR/$PROJECT_NAME -o -h $SRC_DIR/$PROJECT_NAME ]
-    then
-        rm -f $SRC_DIR/$PROJECT_NAME
-    fi
-    if [ ! -d $SRC_DIR/$PROJECT_NAME ]
-    then
-        mkdir -p $SRC_DIR/$PROJECT_NAME
-    fi
     for DIR in `find $SRC/* -type d -prune -print`
     do
         for DIR in `find $DIR -type f \( -name '*.h' -o -name '*.i' -o -name '*.cxx' -o -name '*_info' -o -name '*.profile' -o -name '*.txt' -o -name '*.mk' \) -print | sed -e "s?^$SRC/\([^/]*\)/.*?\1?" | sort -u`
@@ -325,15 +365,6 @@ fi
 
 # Export library files.
 echo "$PRESENT_PARTICIPLE library files..."
-LIB_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/lib
-if [ -f $LIB_DIR -o -h $LIB_DIR ]
-then
-    rm -f $LIB_DIR
-fi
-if [ ! -d $LIB_DIR ]
-then
-    mkdir -p $LIB_DIR
-fi
 for SRC_LIBRARY in `find $SRC/* -type f -name '*.so' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if [ -s $SRC_LIBRARY ]
@@ -346,15 +377,6 @@ done
 
 # Export info files.
 echo "$PRESENT_PARTICIPLE info files..."
-LIB_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/lib
-if [ -f $LIB_DIR -o -h $LIB_DIR ]
-then
-    rm -f $LIB_DIR
-fi
-if [ ! -d $LIB_DIR ]
-then
-    mkdir -p $LIB_DIR
-fi
 for SRC_INFO in `find $SRC/* -type f -name '*_info' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if [ -s $SRC_INFO ]
@@ -367,24 +389,6 @@ done
 
 # Export executable files.
 echo "$PRESENT_PARTICIPLE executable files..."
-BIN_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/bin
-if [ -f $BIN_DIR -o -h $BIN_DIR ]
-then
-    rm -f $BIN_DIR
-fi
-if [ ! -d $BIN_DIR ]
-then
-    mkdir -p $BIN_DIR
-fi
-INHOUSE_BIN_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/bin
-if [ -f $INHOUSE_BIN_DIR -o -h $INHOUSE_BIN_DIR ]
-then
-    rm -f $INHOUSE_BIN_DIR
-fi
-if [ ! -d $INHOUSE_BIN_DIR ]
-then
-    mkdir -p $INHOUSE_BIN_DIR
-fi
 for SRC_EXECUTABLE in `find $SRC/* -type f -name '*.exe' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if [ -s $SRC_EXECUTABLE ]
@@ -402,24 +406,6 @@ done
 
 # Export script files.
 echo "$PRESENT_PARTICIPLE script files..."
-BIN_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/bin
-if [ -f $BIN_DIR -o -h $BIN_DIR ]
-then
-    rm -f $BIN_DIR
-fi
-if [ ! -d $BIN_DIR ]
-then
-    mkdir -p $BIN_DIR
-fi
-INHOUSE_BIN_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/bin
-if [ -f $INHOUSE_BIN_DIR -o -h $INHOUSE_BIN_DIR ]
-then
-    rm -f $INHOUSE_BIN_DIR
-fi
-if [ ! -d $INHOUSE_BIN_DIR ]
-then
-    mkdir -p $INHOUSE_BIN_DIR
-fi
 for SRC_SCRIPT in `find $SRC/* -type f -name '*.sh' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if grep -E '\\ingroup[     ]+public_api' $SRC_SCRIPT >/dev/null 2>&1
@@ -437,15 +423,6 @@ done
 
 # Export configuration files.
 echo "$PRESENT_PARTICIPLE configuration files..."
-CONFIG_DIR=$DST_SPECIFIC/mgc_home/pkgs/${PROJECT_NAME}.$VCO/config
-if [ -f $CONFIG_DIR -o -h $CONFIG_DIR ]
-then
-    rm -f $CONFIG_DIR
-fi
-if [ ! -d $CONFIG_DIR ]
-then
-    mkdir -p $CONFIG_DIR
-fi
 for SRC_CONFIGURATION in `find $SRC/* -type f -name '*.profile' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
 do
     if grep -E '\\ingroup[     ]+public_api' $SRC_CONFIGURATION >/dev/null 2>&1
@@ -460,15 +437,6 @@ done
 if [ "$DST" != "$SRC" ]
 then
     echo "$PRESENT_PARTICIPLE documentation..."
-    DOC_DIR=$DST_SPECIFIC/mgc_home/shared/pkgs/${PROJECT_NAME}_inhouse.$VCO/doc
-    if [ -f $DOC_DIR -o -h $DOC_DIR ]
-    then
-        rm -f $DOC_DIR
-    fi
-    if [ ! -d $DOC_DIR ]
-    then
-        mkdir -p $DOC_DIR
-    fi
     for README in `find $SRC/* -prune -type f -regex '^.*/[A-Z][A-Z0-9_]*' -print`
     do
         cp $README $DOC_DIR
