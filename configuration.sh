@@ -10,13 +10,15 @@ fi
 
 usage () {
     cat <<EOF
-USAGE: $0 [-help|-h] {current|supported}
+USAGE: $0 [-help|-h] {current|setcurrent|supported}
 
 Interact with the configuration database.
 
 Subcommands:
 
 current - Determine the current configuration.
+
+setcurrent - Update the current configuration.
 
 supported - Determine whether the current configuration is supported.
 
@@ -78,6 +80,11 @@ execute_current () {
     fi
 }
 
+execute_setcurrent () {
+    CURRENT=`execute_current`
+    echo $CURRENT > $DOT_DIR/current_configuration
+}
+
 execute_supported () {
     CURRENT=`execute_current`
     if ! awk '{print $1}' $DOT_DIR/supported_configurations | grep -E "^${CURRENT}\$" >/dev/null 2>&1
@@ -117,7 +124,7 @@ do
             usage
             exit 1
         else
-            if [ $1 != "current" -a $1 != "supported" ]
+            if [ $1 != "current" -a $1 != "setcurrent" -a $1 != "supported" ]
             then
                 echo "Unrecognized subcommand: $1" >&2
                 echo "" >&2
@@ -130,10 +137,6 @@ do
     fi
     shift
 done
-#echo "SARGE: NAME=$NAME" >&2 # TODO
-#echo "SARGE: VCO=$VCO" >&2 # TODO
-#echo "SARGE: QT_VERSION=$QT_VERSION" >&2 # TODO
-#echo "SARGE: TCL_VERSION=$TCL_VERSION" >&2 # TODO
 
 if [ -n "$SUBCOMMAND" ]
 then

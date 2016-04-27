@@ -729,6 +729,7 @@ $(eval $(info QT_VERSION = $(QT_VERSION)))
 $(eval $(info TCL_VERSION = $(TCL_VERSION)))
 CURRENT_CONFIGURATION := $(shell ./configuration.sh current QT_VERSION=$(QT_VERSION) TCL_VERSION=$(TCL_VERSION))
 $(eval $(info Current configuration = $(CURRENT_CONFIGURATION)))
+$(shell ./configuration.sh setcurrent QT_VERSION=$(QT_VERSION) TCL_VERSION=$(TCL_VERSION))
 
 $(eval $(info Adding rules for all targets from Makefiles))
 
