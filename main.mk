@@ -84,7 +84,4 @@ include olh.mk
 $(eval $(info Adding root SUBMAKEFILE))
 SUBMAKEFILES := ${ROOT}/root.mk
 
-CURRENT_CONFIGURATION := $(shell ./configuration.sh current)
-$(eval $(info Current configuration = $(CURRENT_CONFIGURATION)))
-
 $(eval $(info Done reading main.mk))
