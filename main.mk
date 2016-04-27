@@ -71,10 +71,6 @@ LDFLAGS :=	-L.
 ## Comment the next line to auto-remove generated files
 #.SECONDARY:
 
-$(eval $(info Adding root SUBMAKEFILE))
-SUBMAKEFILES := ${ROOT}/root.mk
-
-
 # INTERMEDIATE keyword is broken on make 3.81. It also makes targets .PRECIOUS
 # FIXED in make 3.82
 ##.INTERMEDIATE: %pywrap.cxx %wrap.cxx
@@ -85,8 +81,10 @@ include mgls.mk
 # OLH
 include olh.mk
 
+$(eval $(info Adding root SUBMAKEFILE))
+SUBMAKEFILES := ${ROOT}/root.mk
+
+CURRENT_CONFIGURATION := $(shell ./configuration.sh current)
+$(eval $(info Current configuration = $(CURRENT_CONFIGURATION)))
+
 $(eval $(info Done reading main.mk))
-
-
-
-
