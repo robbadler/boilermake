@@ -47,42 +47,57 @@ valid_variable_value () {
     grep -E "^[ ]*$2[ ]*$" $BOILERMAKE_DIR/$1 >/dev/null 2>&1
 }
 
-execute_current () {
+initialize_variables () {
     if [ -s $DOT_DIR/current_configuration ]
     then
-        head -1 $DOT_DIR/current_configuration | awk '{print $1}'
-    else
-        PATTERN=""
+        CURRENT=`head -1 $DOT_DIR/current_configuration | awk '{print $1}'`
+        INDEX=0
         for VAR_NAME in `variable_names`
         do
-            if [ "$VAR_NAME" = "NAME" ]
+            INDEX=`expr $INDEX + 1`
+            if [ "$VAR_NAME" != "NAME" ]
             then
-                continue
+                env | grep -E "^${VAR_NAME}=" >&2
+                if ! env | grep -E "^${VAR_NAME}=" >/dev/null 2>&1
+                then
+                    PATTERN="{print \$$INDEX}"
+                    echo $VAR_NAME=`grep -E "^[ ]*${CURRENT}" $DOT_DIR/supported_configurations | awk "$PATTERN"` >&2
+                    eval $VAR_NAME=`grep -E "^[ ]*${CURRENT}" $DOT_DIR/supported_configurations | awk "$PATTERN"`
+                fi
             fi
-
-            eval VAR_VALUE=\$$VAR_NAME
-            if [ -z "$VAR_VALUE" ]
-            then
-                echo "Missing variable: $VAR_NAME" >&2
-                exit 1
-            fi
-
-            if ! valid_variable_value $VAR_NAME "$VAR_VALUE"
-            then
-                echo "Invalid value for $VAR_NAME: $VAR_VALUE"
-                exit 1
-            fi
-
-            PATTERN="${PATTERN}[ ][ ]*${VAR_VALUE}"
         done
-        PATTERN="${PATTERN}\$"
-        grep -E "$PATTERN" $DOT_DIR/supported_configurations | awk '{print $1}'
     fi
 }
 
+execute_current () {
+    initialize_variables
+
+    PATTERN=""
+    for VAR_NAME in `variable_names`
+    do
+        if [ "$VAR_NAME" != "NAME" ]
+        then
+            eval VAR_VALUE=\$$VAR_NAME
+            if [ -n "$VAR_VALUE" ]
+            then
+                if ! valid_variable_value $VAR_NAME "$VAR_VALUE"
+                then
+                    echo "Invalid value for $VAR_NAME: $VAR_VALUE"
+                    exit 1
+                fi
+
+                PATTERN="${PATTERN}[ ][ ]*${VAR_VALUE}"
+            else
+                PATTERN="${PATTERN}[ ][ ]*[^ ][^ ]*"
+            fi
+        fi
+    done
+    PATTERN="${PATTERN}\$"
+    grep -E "$PATTERN" $DOT_DIR/supported_configurations | head -1 | awk '{print $1}'
+}
+
 execute_setcurrent () {
-    CURRENT=`execute_current`
-    echo $CURRENT > $DOT_DIR/current_configuration
+    execute_current > $DOT_DIR/current_configuration
 }
 
 execute_supported () {
@@ -110,10 +125,7 @@ do
             VAR_NAME=`echo $1 | cut -d= -f1`
             if ! valid_variable_name $VAR_NAME
             then
-                echo "Unrecognized variable: $VAR_NAME" >&2
-                echo "" >&2
-                usage
-                exit 1
+                true
             else
                 eval "$1"
             fi
