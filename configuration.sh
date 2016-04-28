@@ -130,8 +130,8 @@ execute_makeflags () {
 }
 
 execute_select () {
-    execute_name > $DOT_DIR/current_configuration
-    get_configuration_name
+    CURRENT=`execute_name`
+    echo $CURRENT | tee $DOT_DIR/current_configuration
 }
 
 execute_supported () {
