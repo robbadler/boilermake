@@ -1,9 +1,11 @@
 #! /bin/sh
 # -*- mode: Shell-script; indent-tabs-mode: nil; -*-
 
+BIN_DIR=`dirname $0`
+
 usage () {
     cat <<EOF
-USAGE: $0 [-help|-h] [-source] <source> [<destination>]
+USAGE: $0 [-help|-h] [-configuration <name>] [-source] <source> [<destination>]
 
 Export a git project.
 
@@ -99,6 +101,7 @@ ensure_directory () {
 }
 
 TYPE=det
+CONFIGURATION=
 SRC=
 DST=
 MAJOR_VERSION=
@@ -120,6 +123,10 @@ do
     elif [ "$1" = "-det" ]
     then
         TYPE=det
+    elif [ "$1" = "-configuration" ]
+    then
+        shift
+        CONFIGURATION=$1
     elif [ -z "$1" ]
     then
         true # Discarding empty command-line argument
@@ -136,6 +143,11 @@ do
     fi
     shift
 done
+
+if [ -z "$CONFIGURATION" ]
+then
+    CONFIGURATION=`$BIN_DIR/configuration.sh name`
+fi
 
 if [ -z "$SRC" ]
 then
@@ -242,7 +254,7 @@ then
 else
     COMMAND=cp
     PRESENT_PARTICIPLE="Copying"
-    DST_SPECIFIC=$DST/${PROJECT_NAME}_${MAJOR_VERSION}_${MINOR_VERSION}_${PATCH_VERSION}.${VCO}
+    DST_SPECIFIC=$DST/$PROJECT_NAME/${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}/$CONFIGURATION
 
     # Ensure that the destination specific directory exists.
     if [ ! -d $DST_SPECIFIC ]
@@ -252,6 +264,9 @@ else
     else
         echo "Using $DST_SPECIFIC"
     fi
+
+    # Remove any extant symbolic links under the project directory.
+    find $DST/$PROJECT_NAME/* -prune -type l -exec rm -fv {} \;
 fi
 
 # Determine the destination directories.
@@ -442,6 +457,27 @@ then
         cp $README $DOC_DIR
     done
     rsync -rLptgo --exclude='*.pages' --chmod=a+r,ug+w --delete-delay $SRC/doc $DOC_DIR
+fi
+
+# Update the symbolic links.
+if [ "$DST" != "$SRC" ]
+then
+    echo "Updating symbolic links..."
+    cd $DST/$PROJECT_NAME
+
+    PATTERN="[0-9]*"
+    LINK_MAJOR=`find * -prune -type d -name "$PATTERN" -print | cut -d. -f1 | sort -u -n | tail -1`
+
+    PATTERN="$LINK_MAJOR.[0-9]*"
+    LINK_MINOR=`find * -prune -type d -name "$PATTERN" -print | cut -d. -f2 | sort -u -n | tail -1`
+
+    PATTERN="$LINK_MAJOR.$LINK_MINOR.[0-9]*"
+    LINK_PATCH=`find * -prune -type d -name "$PATTERN" -print | cut -d. -f3 | sort -u -n | tail -1`
+
+    if [ -d ${LINK_MAJOR}.${LINK_MINOR}.${LINK_PATCH} ]
+    then
+        ln -s ${LINK_MAJOR}.${LINK_MINOR}.${LINK_PATCH} latest
+    fi
 fi
 
 echo "Done."

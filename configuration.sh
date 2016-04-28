@@ -172,7 +172,7 @@ do
             usage
             exit 1
         else
-            if [ $1 != "current" -a $1 != "makeflags" -a $1 != "select" -a $1 != "supported" ]
+            if [ $1 != "name" -a $1 != "makeflags" -a $1 != "select" -a $1 != "supported" ]
             then
                 echo "Unrecognized subcommand: $1" >&2
                 echo "" >&2
