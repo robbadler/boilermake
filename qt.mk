@@ -1,10 +1,3 @@
-QT_VERSION ?= 4
-
-# Qt 5 is only built and exported for aoi at this time.
-ifeq "$(findstring _$(VCO)_,_aof_aog_aoh_)" "_$(VCO)_"
-   QT_VERSION := 4
-endif
-
 ifneq ($(QT_VERSION), 5)
 # Qt install dir
 QT_HOME := /wv/ic_wg_server/ic/qt/exports.v0-0_3-10-2015_engr-$(VCO)/mgc_home

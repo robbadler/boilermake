@@ -10,15 +10,17 @@ fi
 
 usage () {
     cat <<EOF
-USAGE: $0 [-help|-h] {current|setcurrent|supported}
+USAGE: $0 [-help|-h] {name|makeflags|select|supported}
 
 Interact with the configuration database.
 
 Subcommands:
 
-current - Determine the current configuration.
+name - Determine the name of the current configuration.
 
-setcurrent - Update the current configuration.
+makeflags - Determine the make flags of the curent configuration.
+
+select - Update the current configuration.
 
 supported - Determine whether the current configuration is supported.
 
@@ -47,21 +49,30 @@ valid_variable_value () {
     grep -E "^[ ]*$2[ ]*$" $BOILERMAKE_DIR/$1 >/dev/null 2>&1
 }
 
-initialize_variables () {
+get_configuration_name () {
     if [ -s $DOT_DIR/current_configuration ]
     then
-        CURRENT=`head -1 $DOT_DIR/current_configuration | awk '{print $1}'`
+        head -1 $DOT_DIR/current_configuration | awk '{print $1}'
+    else
+        echo ""
+    fi
+}
+
+initialize_variables () {
+    vet_supported_configurations
+
+    CURRENT=`get_configuration_name`
+    if [ -n "$CURRENT" ]
+    then
         INDEX=0
         for VAR_NAME in `variable_names`
         do
             INDEX=`expr $INDEX + 1`
             if [ "$VAR_NAME" != "NAME" ]
             then
-                env | grep -E "^${VAR_NAME}=" >&2
                 if ! env | grep -E "^${VAR_NAME}=" >/dev/null 2>&1
                 then
                     PATTERN="{print \$$INDEX}"
-                    echo $VAR_NAME=`grep -E "^[ ]*${CURRENT}" $DOT_DIR/supported_configurations | awk "$PATTERN"` >&2
                     eval $VAR_NAME=`grep -E "^[ ]*${CURRENT}" $DOT_DIR/supported_configurations | awk "$PATTERN"`
                 fi
             fi
@@ -69,7 +80,7 @@ initialize_variables () {
     fi
 }
 
-execute_current () {
+execute_name () {
     initialize_variables
 
     PATTERN=""
@@ -96,12 +107,37 @@ execute_current () {
     grep -E "$PATTERN" $DOT_DIR/supported_configurations | head -1 | awk '{print $1}'
 }
 
-execute_setcurrent () {
-    execute_current > $DOT_DIR/current_configuration
+execute_makeflags () {
+    vet_supported_configurations
+
+    MAKEFLAGS=""
+    CURRENT=`get_configuration_name`
+    if [ -n "$CURRENT" ]
+    then
+        INDEX=0
+        for VAR_NAME in `variable_names`
+        do
+            INDEX=`expr $INDEX + 1`
+            if [ "$VAR_NAME" != "NAME" ]
+            then
+                PATTERN="{print \$$INDEX}"
+                VAR_VALUE=`grep -E "^[ ]*${CURRENT}" $DOT_DIR/supported_configurations | awk "$PATTERN"`
+                MAKEFLAGS="$MAKEFLAGS $VAR_NAME=$VAR_VALUE"
+            fi
+        done
+    fi
+    echo $MAKEFLAGS
+}
+
+execute_select () {
+    execute_name > $DOT_DIR/current_configuration
+    get_configuration_name
 }
 
 execute_supported () {
-    CURRENT=`execute_current`
+    vet_supported_configurations
+
+    CURRENT=`execute_name`
     if ! awk '{print $1}' $DOT_DIR/supported_configurations | grep -E "^${CURRENT}\$" >/dev/null 2>&1
     then
         echo "Unsupported platform: $CURRENT" >&2
@@ -136,7 +172,7 @@ do
             usage
             exit 1
         else
-            if [ $1 != "current" -a $1 != "setcurrent" -a $1 != "supported" ]
+            if [ $1 != "current" -a $1 != "makeflags" -a $1 != "select" -a $1 != "supported" ]
             then
                 echo "Unrecognized subcommand: $1" >&2
                 echo "" >&2

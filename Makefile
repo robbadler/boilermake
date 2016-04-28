@@ -724,13 +724,6 @@ EXPORT_DIR_BASE :=
 # all other user-supplied submakefiles.
 $(eval $(call INCLUDE_SUBMAKEFILE,main.mk))
 $(eval $(info Done reading all SUBMAKEFILES))
-
-$(eval $(info QT_VERSION = $(QT_VERSION)))
-$(eval $(info TCL_VERSION = $(TCL_VERSION)))
-CURRENT_CONFIGURATION := $(shell ./configuration.sh current QT_VERSION=$(QT_VERSION) TCL_VERSION=$(TCL_VERSION))
-$(eval $(info Current configuration = $(CURRENT_CONFIGURATION)))
-$(shell ./configuration.sh setcurrent QT_VERSION=$(QT_VERSION) TCL_VERSION=$(TCL_VERSION))
-
 $(eval $(info Adding rules for all targets from Makefiles))
 
 # Perform post-processing on global variables as needed.
