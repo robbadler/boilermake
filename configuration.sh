@@ -27,26 +27,53 @@ supported - Determine whether the current configuration is supported.
 EOF
 }
 
-vet_supported_configurations () {
-    if [ ! -f $DOT_DIR/supported_configurations ]
+vet_all_configurations () {
+    if [ ! -f $BOILERMAKE_DIR/all_configurations ]
     then
-        echo "Unable to find supported configurations" >&2
+        echo "Unable to find all configurations" >&2
         exit 1
     fi
 }
 
 valid_variable_name () {
-    vet_supported_configurations
-    head -1 $DOT_DIR/supported_configurations | grep -E "[# ]$1([ ]*|$)" >/dev/null 2>&1
+    vet_all_configurations
+    head -1 $BOILERMAKE_DIR/all_configurations | grep -E "[# ]$1([ ]*|$)" >/dev/null 2>&1
 }
 
 variable_names () {
-    vet_supported_configurations
-    head -1 $DOT_DIR/supported_configurations | sed -e 's/^#[ ]*//'
+    vet_all_configurations
+    head -1 $BOILERMAKE_DIR/all_configurations | sed -e 's/^#[ ]*//'
 }
 
 valid_variable_value () {
+    if [ ! -f $BOILERMAKE_DIR/$1 ]
+    then
+        echo "Unable to find $1" >&2
+        exit 1
+    fi
     grep -E "^[ ]*$2[ ]*$" $BOILERMAKE_DIR/$1 >/dev/null 2>&1
+}
+
+vet_supported_configurations () {
+    vet_all_configurations
+    if [ ! -f $DOT_DIR/supported_configurations ]
+    then
+        echo "Unable to find supported configurations" >&2
+        exit 1
+    fi
+    for NAME in `cat $DOT_DIR/supported_configurations`
+    do
+        if ! grep -E "^[ ]*$NAME[ ]" $BOILERMAKE_DIR/all_configurations >/dev/null 2>&1
+        then
+            echo "Unsupported configuration: $NAME" >&2
+            exit 1
+        fi
+    done
+}
+
+supported_configuration () {
+    vet_supported_configurations
+    awk '{print $1}' $DOT_DIR/supported_configurations | grep -E "^$1\$" >/dev/null 2>&1
 }
 
 get_configuration_name () {
@@ -59,7 +86,7 @@ get_configuration_name () {
 }
 
 initialize_variables () {
-    vet_supported_configurations
+    vet_all_configurations
 
     CURRENT=`get_configuration_name`
     if [ -n "$CURRENT" ]
@@ -73,7 +100,7 @@ initialize_variables () {
                 if ! env | grep -E "^${VAR_NAME}=" >/dev/null 2>&1
                 then
                     PATTERN="{print \$$INDEX}"
-                    eval $VAR_NAME=`grep -E "^[ ]*${CURRENT}" $DOT_DIR/supported_configurations | awk "$PATTERN"`
+                    eval $VAR_NAME=`grep -E "^[ ]*${CURRENT}" $BOILERMAKE_DIR/all_configurations | awk "$PATTERN"`
                 fi
             fi
         done
@@ -104,11 +131,18 @@ execute_name () {
         fi
     done
     PATTERN="${PATTERN}\$"
-    grep -E "$PATTERN" $DOT_DIR/supported_configurations | head -1 | awk '{print $1}'
+    for NAME in `grep -E "$PATTERN" $BOILERMAKE_DIR/all_configurations | awk '{print $1}'`
+    do
+        if grep -E "^[ ]*$NAME[ ]*$" $DOT_DIR/supported_configurations >/dev/null 2>&1
+        then
+            echo $NAME
+            return
+        fi
+    done
 }
 
 execute_makeflags () {
-    vet_supported_configurations
+    vet_all_configurations
 
     MAKEFLAGS=""
     CURRENT=`get_configuration_name`
@@ -121,7 +155,7 @@ execute_makeflags () {
             if [ "$VAR_NAME" != "NAME" ]
             then
                 PATTERN="{print \$$INDEX}"
-                VAR_VALUE=`grep -E "^[ ]*${CURRENT}" $DOT_DIR/supported_configurations | awk "$PATTERN"`
+                VAR_VALUE=`grep -E "^[ ]*${CURRENT}" $BOILERMAKE_DIR/all_configurations | awk "$PATTERN"`
                 MAKEFLAGS="$MAKEFLAGS $VAR_NAME=$VAR_VALUE"
             fi
         done
@@ -135,10 +169,8 @@ execute_select () {
 }
 
 execute_supported () {
-    vet_supported_configurations
-
     CURRENT=`execute_name`
-    if ! awk '{print $1}' $DOT_DIR/supported_configurations | grep -E "^${CURRENT}\$" >/dev/null 2>&1
+    if ! supported_configuration $CURRENT
     then
         echo "Unsupported platform: $CURRENT" >&2
         exit 1
