@@ -1,5 +1,6 @@
-# NAME           VCO QT_VERSION TCL_VERSION
-###########################################
-  plum           aoi 5         8.6
-  crimson        aoi 4         8.6
-  blueberry      aoh 4         8.6
+# NAME      VCO QT_VERSION TCL_VERSION PYTHON_VERSION
+#####################################################
+  plum      aoi 5          8.6         2.6
+  crimson   aoi 4          8.6         2.6
+  blueberry aoh 4          8.6         2.6
+  avocado   aoi 5          8.6         3
