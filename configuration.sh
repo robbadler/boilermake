@@ -157,6 +157,10 @@ execute_makeflags () {
                 PATTERN="{print \$$INDEX}"
                 VAR_VALUE=`grep -E "^[ ]*${CURRENT}" $BOILERMAKE_DIR/all_configurations | awk "$PATTERN"`
                 MAKEFLAGS="$MAKEFLAGS $VAR_NAME=$VAR_VALUE"
+            else
+                PATTERN="{print \$$INDEX}"
+                VAR_VALUE=`grep -E "^[ ]*${CURRENT}" $BOILERMAKE_DIR/all_configurations | awk "$PATTERN"`
+                MAKEFLAGS="$MAKEFLAGS CONFIGURATION_NAME=$VAR_VALUE"
             fi
         done
     fi
