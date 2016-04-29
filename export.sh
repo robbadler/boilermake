@@ -65,26 +65,19 @@ ensure_link () {
     then
         if [ -e $2 ]
         then
-            if [ -L $2 ]
+            if [ ! -L $2 ]
             then
-                if [ $1 != `readlink -f $2` ]
-                then
-                    rm -f $2
-                fi
-            else
                 rm -f $2
             fi
         fi
-        if [ ! -e $2 ]
+
+        PARENT_DIRECTORY=`dirname $2`
+        cd $PARENT_DIRECTORY
+        if [ $TYPE = "det" ]
         then
-            PARENT_DIRECTORY=`dirname $2`
-            cd $PARENT_DIRECTORY
-            if [ $TYPE = "det" ]
-            then
-                ln -s $1 `basename $2`
-            else
-                ln -s `get_relative_path $1 $PARENT_DIRECTORY` `basename $2`
-            fi
+            ln -s $1 `basename $2`
+        else
+            ln -s `get_relative_path $1 $PARENT_DIRECTORY` `basename $2`
         fi
     fi
 }
