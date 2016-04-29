@@ -10,7 +10,7 @@ fi
 
 usage () {
     cat <<EOF
-USAGE: $0 [-help|-h] {name|makeflags|select|supported}
+USAGE: $0 [-help|-h] {name|makeflags|select|supported|reset}
 
 Interact with the configuration database.
 
@@ -23,6 +23,8 @@ makeflags - Determine the make flags of the curent configuration.
 select - Update the current configuration.
 
 supported - Determine whether the current configuration is supported.
+
+reset - Reset the current configuration.
 
 EOF
 }
@@ -181,6 +183,10 @@ execute_supported () {
     fi
 }
 
+execute_reset () {
+    rm -f $DOT_DIR/current_configuration >/dev/null 2>&1
+}
+
 SUBCOMMAND=
 while [ $# -gt 0 ]
 do
@@ -208,7 +214,7 @@ do
             usage
             exit 1
         else
-            if [ $1 != "name" -a $1 != "makeflags" -a $1 != "select" -a $1 != "supported" ]
+            if [ $1 != "name" -a $1 != "makeflags" -a $1 != "select" -a $1 != "supported" -a $1 != "reset" ]
             then
                 echo "Unrecognized subcommand: $1" >&2
                 echo "" >&2
