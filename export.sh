@@ -390,6 +390,18 @@ do
     fi
 done
 
+# Export binding files.
+echo "$PRESENT_PARTICIPLE binding files..."
+for SRC_BINDING in `find $SRC/* -type f -name '*.py' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
+do
+    if grep -E '\\ingroup[     ]+public_api' $SRC_BINDING >/dev/null 2>&1
+    then
+        DST_BINDING=$LIB_DIR/`basename $SRC_BINDING`
+        $COMMAND $SRC_BINDING $DST_BINDING
+        chmod 664 $DST_BINDING
+    fi
+done
+
 # Export info files.
 echo "$PRESENT_PARTICIPLE info files..."
 for SRC_INFO in `find $SRC/* -type f -name '*_info' -print | egrep -v "exports/mgc_home|ao./${PROJECT_NAME}_"`
