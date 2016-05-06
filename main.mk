@@ -83,6 +83,7 @@ EXPORT_DIR_BASE := $(MGC_HOME)/lib
 LDFLAGS := \
            -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
            -L$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
+           -L$(MGC_HOME)/../exports/mgc_home/pkgs/pdk_inhouse.$(VCO)/lib \
 
 
 ## HOWTO DET EXPORT

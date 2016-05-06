@@ -213,7 +213,7 @@ endef
 define ADD_TARGET_RULE
     ifeq "$$(suffix ${1})" ".a"
         # Add a target for creating a static library.
-        $${${1}_TGTDIR}/${1}: $${${1}_OBJS}
+        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES}
         ##$${TARGET_DIR}/${1}: $${${1}_OBJS}
 	     @echo ar $$(notdir $$@)...
 	     @mkdir -p $$(dir $$@)
@@ -237,9 +237,9 @@ define ADD_TARGET_RULE
         endif
 
 # RE-ENABLE IF WE REMOVE THE .PHONY TARGET MAPPING
-        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
+        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES} $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
 # END RE-ENABLE        
-#        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS}
+#        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS} $${$${1}_MKFILES}
 	     @mkdir -p $$(dir $$@)
 	     @echo $${${1}_LINKER} $$(notdir $$@)...
 #	     $$(strip $${${1}_LINKER} -o $$@ $${LDFLAGS} $${${1}_LDFLAGS} \
@@ -431,6 +431,7 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_CXXFLAGS  := $${TGT_CXXFLAGS}
         $${TGT}_DEFS      := $${TGT_DEFS}
         $${TGT}_DEPS      :=
+        $${TGT}_MKFILES   := $$(strip ${1})
         $${TGT}_SRCDIRS   :=
         TGT_INCDIRS       := $${DIR} $${TGT_INCDIRS}
         TGT_INCDIRS       := $$(call QUALIFY_PATH,$${DIR},$${TGT_INCDIRS})
@@ -476,6 +477,7 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_CFLAGS    += $${TGT_CFLAGS}
         $${TGT}_CXXFLAGS  += $${TGT_CXXFLAGS}
         $${TGT}_DEFS      += $${TGT_DEFS}
+        $${TGT}_MKFILES   += $$(strip ${1})
         TGT_INCDIRS       := $${DIR} $${TGT_INCDIRS}
         TGT_INCDIRS       := $$(call QUALIFY_PATH,$${DIR},$${TGT_INCDIRS})
         TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
