@@ -1,4 +1,4 @@
-TARGET := libanimals.a
+TARGET := libanimals$(LIB_EXT)
 
 SOURCES := \
     animal.cc \

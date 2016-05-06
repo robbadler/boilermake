@@ -2,7 +2,7 @@ TARGET := talk
 
 TGT_LDFLAGS := -L${TARGET_DIR}
 TGT_LDLIBS  := -lanimals
-TGT_PREREQS := libanimals.a
+TGT_PREREQS := libanimals$(LIB_EXT)
 
 SOURCES := talk.cc
 

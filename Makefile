@@ -211,7 +211,7 @@ endef
 #   USE WITH EVAL
 #
 define ADD_TARGET_RULE
-    ifeq "$$(suffix ${1})" ".a"
+    ifeq "$$(suffix ${1})" "${LIB_EXT}"
         # Add a target for creating a static library.
         $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES}
         ##$${TARGET_DIR}/${1}: $${${1}_OBJS}
@@ -438,7 +438,7 @@ define INCLUDE_SUBMAKEFILE
         TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
         $${TGT}_INCDIRS   := $${TGT_INCDIRS}
         $${TGT}_LDFLAGS   :=
-        ifeq "$$(suffix $${TGT})" ".so"
+        ifeq "$$(suffix $${TGT})" "$(SLIB_EXT)"
             $${TGT}_LDFLAGS += -shared
         endif
         ifneq "$$(suffix $${TGT})" ".a"
@@ -668,6 +668,13 @@ ifneq "${MIN_MAKE_VERSION}" "$(call MIN,${MIN_MAKE_VERSION},${MAKE_VERSION})"
 endif
 
 # Define the source file extensions that we know how to handle.
+ifneq "$(findstring _$(VCO)_,_ixn_ixw_)" "_$(VCO)_"
+SLIB_EXT := .so
+LIB_EXT  := .a
+else
+SLIB_EXT := .dll
+LIB_EXT  := .lib
+endif
 C_SRC_EXTS := %.c
 MOC_SRC_EXT := %.cpp
 CXX_SRC_EXTS := %.cxx %.cc %.c++ ${MOC_SRC_EXT} ${C_SRC_EXTS}
@@ -794,12 +801,12 @@ $(foreach TGT,${ALL_TGTS},\
 # Include swig sources
 $(foreach TGT,${ALL_TGTS},\
   $(foreach SRCDIR,${${TGT}_SRCDIRS},\
-  $(if $(and $(wildcard $(addprefix ${SRCDIR}/,*.i)),$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i)))))),\
+  $(if $(and $(wildcard $(addprefix ${SRCDIR}/,*.i)),$(filter $(patsubst _%$(SLIB_EXT),%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i)))))),\
     $(eval $(call ADD_SWIG_RULE,$(strip ${SRCDIR}),\
                                   $(strip ${SWIG_SRC_EXT}),\
                                   ${${TGT}_TGTDIR},\
                                   $${GENERATE_SWIG_CMDS}))\
-    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py),$(addprefix ${${TGT}_EXPORTDIR}/,$(filter $(patsubst _%.so,%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py)))\
+    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,$(filter $(patsubst _%$(SLIB_EXT),%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py),$(addprefix ${${TGT}_EXPORTDIR}/,$(filter $(patsubst _%$(SLIB_EXT),%,$(notdir ${TGT})),$(basename $(notdir $(wildcard $(addprefix ${SRCDIR}/,*.i))))).py)))\
   )\
 ))
 
