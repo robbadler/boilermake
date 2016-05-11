@@ -66,6 +66,13 @@ endif
 AR = /usr/bin/ar
 ARFLAGS := rc
 
+LIB_EXT  := .a
+SLIB_EXT := .so
+ifeq "$(findstring _$(VCO)_,_ixn_ixw_)" "_$(VCO)_"
+LIB_EXT  := .lib
+SLIB_EXT  := .dll
+endif
+
 #CXXFLAGS += \
 				-Wall -Wsynth -fcheck-new -fno-strict-aliasing -fmessage-length=1024 \
 				-Wno-ctor-dtor-privacy -Wno-non-virtual-dtor -Wno-unused -fno-omit-frame-pointer \
@@ -83,6 +90,8 @@ EXPORT_DIR_BASE := $(MGC_HOME)/lib
 LDFLAGS := \
            -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
            -L$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
+           -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk_inhouse.$(VCO)/lib \
+           -L$(MGC_HOME)/../exports/mgc_home/pkgs/pdk_inhouse.$(VCO)/lib \
 
 
 ## HOWTO DET EXPORT
