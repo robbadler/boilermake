@@ -58,6 +58,12 @@ CXXFLAGS += $(CXXFLAGS_DBG)
 OPT = 0
 endif
 
+GCOV ?= 0
+ifeq ($(GCOV), 1)
+CXXFLAGS += -fprofile-arcs -ftest-coverage
+OPT = 0
+endif
+
 OPT ?= 1
 ifeq ($(OPT), 1)
 CXXFLAGS += $(CXXFLAGS_OPT)
