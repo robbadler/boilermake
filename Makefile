@@ -187,14 +187,21 @@ endef
 #$(eval $(info 1=${1} 2=${2} 3=${3}))
 define EXPORT_FILE
 all: ${3}
-${3}: ${2}
-	@mkdir -p $(strip $(dir ${3}))
+${3}: |${2}
 	ln -sf ${2} ${3}
+
+${3}: |$(strip $(dir ${3}))
 
 clean_${1}: clean_${3}
 .PHONY: clean_${3}
 clean_${3}:
 	rm -f ${3}
+endef
+
+#$(strip ${1}):
+define MAKE_DIR
+$(strip ${1}):
+	mkdir -p ${1}
 endef
 
 define ADD_QPLUGIN_INFO_RULE
@@ -212,11 +219,12 @@ endef
 #
 define ADD_TARGET_RULE
     ifeq "$$(suffix ${1})" "${LIB_EXT}"
+        ${1} : |$$(dir $${1})
+
         # Add a target for creating a static library.
         $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES}
         ##$${TARGET_DIR}/${1}: $${${1}_OBJS}
 	     @echo ar $$(notdir $$@)...
-	     @mkdir -p $$(dir $$@)
 	     $(QUIET)$$(strip $${AR} $${ARFLAGS} $$@ $${${1}_OBJS})
 	     $${${1}_POSTMAKE}
     else
@@ -236,11 +244,12 @@ define ADD_TARGET_RULE
 #            endif
         endif
 
+        $${${1}_TGTDIR}/${1}: |$${${1}_TGTDIR}
+
 # RE-ENABLE IF WE REMOVE THE .PHONY TARGET MAPPING
-        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES} $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
+        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES} |$$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
 # END RE-ENABLE        
 #        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS} $${$${1}_MKFILES}
-	     @mkdir -p $$(dir $$@)
 	     @echo $${${1}_LINKER} $$(notdir $$@)...
 #	     $$(strip $${${1}_LINKER} -o $$@ $${LDFLAGS} $${${1}_LDFLAGS} \
 #	        --whole-archive $${${1}_OBJS} --no-whole-archive $${LDLIBS} $${${1}_LDLIBS})
@@ -719,6 +728,11 @@ $(foreach TGT,${ALL_TGTS},$(eval $(call ADD_DEP,${TGT},$(addprefix ${${TGT}_TGTD
 # EXPORT TARGETS TO THEIR EXPORT_DIR PATHS, WHICH ARE RELATIVE TO $(EXPORT_DIR_BASE)
 $(foreach TGT,${ALL_TGTS},$(if $(filter-out ${${TGT}_TGTDIR},${${TGT}_EXPORTDIR}),\
     $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT}),$(addprefix ${${TGT}_EXPORTDIR}/,${TGT})))))
+
+# CREATE TARGET DIRECTORIES ONLY ONCE
+ALLDIRS=$(foreach TGT,${ALL_TGTS},${${TGT}_TGTDIR} ${${TGT}_EXPORTDIR})
+$(foreach MKDIR,$(sort ${ALLDIRS}),$(eval $(call MAKE_DIR,${MKDIR})))
+
 
 # QtPlugin *_INFO files as targets
 all: $(foreach TGT,${ALL_TGTS},\
