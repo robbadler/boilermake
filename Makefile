@@ -247,7 +247,7 @@ define ADD_TARGET_RULE
         $${${1}_TGTDIR}/${1}: |$${${1}_TGTDIR}
 
 # RE-ENABLE IF WE REMOVE THE .PHONY TARGET MAPPING
-        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES} |$$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
+        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES} $$(foreach PRE,$${${1}_PREREQS},$$(if $$(findstring $$(suffix $${PRE}),$${LIB_EXT}),$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))) |$$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
 # END RE-ENABLE        
 #        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS} $${$${1}_MKFILES}
 	     @echo $${${1}_LINKER} $$(notdir $$@)...
@@ -450,14 +450,14 @@ define INCLUDE_SUBMAKEFILE
         ifeq "$$(suffix $${TGT})" "$(SLIB_EXT)"
             $${TGT}_LDFLAGS += -shared
         endif
-        ifneq "$$(suffix $${TGT})" ".a"
+        ifneq "$$(suffix $${TGT})" "$(LIB_EXT)"
             ifeq "$$(strip $${TGT_CHECK_LIB_DEFS})" "true"
                 $${TGT}_LDFLAGS += -Wl,--no-undefined
             endif
         endif
         $${TGT}_LDFLAGS   += $${TGT_LDFLAGS}
-        $${TGT}_STATICLIBS := $$(filter %.a,$${TGT_LDLIBS})
-        $${TGT}_LDLIBS    := $$(filter-out %.a,$${TGT_LDLIBS})
+        $${TGT}_STATICLIBS := $$(filter %$(LIB_EXT),$${TGT_LDLIBS})
+        $${TGT}_LDLIBS    := $$(filter-out %$(LIB_EXT),$${TGT_LDLIBS})
         $${TGT}_LINKER    := $${TGT_LINKER}
         $${TGT}_OBJS      :=
         $${TGT}_POSTCLEAN := $${TGT_POSTCLEAN}
@@ -465,15 +465,6 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_SOURCES   :=
         $${TGT}_NEEDS_MOC :=
         $${TGT}_TGTDIR    := $${TARGET_DIR}
-        $${TGT}_PREREQS   :=
-#        ifneq "$$(strip $${TGT_PREREQS})" ""
-#          $$(call $$(foreach PRE,$${TGT_PREREQS},\
-#                                                    $$(eval $$(info $${TARGET} PRE is [$${PRE}]));\
-#                                                    $$(eval $$(info $${PRE}_TGTDIR is [$${$${PRE}_TGTDIR}]));\
-#                                                    $$(eval $$(info $${TGT}_PREREQS is [$${$${TGT}_PREREQS}]));\
-#                                                    $${TGT}_PREREQS += $${PRE}))
-#        endif
-        #$${TGT}_PREREQS   := $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
         $${TGT}_PREREQS   := $${TGT_PREREQS}
         $${TGT}_PLUG_INFO :=
         $${TGT}_SWIG_FLAGS := $${SRC_SWIG_FLAGS}
@@ -496,11 +487,6 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_LDLIBS    += $$(filter-out %.a,$${TGT_LDLIBS})
         $${TGT}_POSTCLEAN += $${TGT_POSTCLEAN}
         $${TGT}_POSTMAKE  += $${TGT_POSTMAKE}
-#        $${TGT}_TGTDIR    := $${TARGET_DIR}
-#        ifneq "$${TGT_PREREQS}" ""
-#          $$(call $$(foreach PRE,$${TGT_PREREQS},$${TGT}_PREREQS += $${PRE}))
-#        endif
-        #$${TGT}_PREREQS   += $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
         $${TGT}_PREREQS   += $${TGT_PREREQS}
         $${TGT}_SWIG_FLAGS := $${SRC_SWIG_FLAGS}
         $${TGT}_MOC_FLAGS := $${SRC_MOC_FLAGS}
