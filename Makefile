@@ -247,7 +247,7 @@ define ADD_TARGET_RULE
         $${${1}_TGTDIR}/${1}: |$${${1}_TGTDIR}
 
 # RE-ENABLE IF WE REMOVE THE .PHONY TARGET MAPPING
-        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES} $$(foreach PRE,$${${1}_PREREQS},$$(if $$(findstring $$(suffix $${PRE}),$${LIB_EXT}),$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))) |$$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
+        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES} $$(foreach PRE,$${${1}_PREREQS},$$(if $$(findstring $$(suffix $${PRE}),$${LIB_EXT}),$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))) $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
 # END RE-ENABLE        
 #        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS} $${$${1}_MKFILES}
 	     @echo $${${1}_LINKER} $$(notdir $$@)...
@@ -712,8 +712,9 @@ all: $(foreach TGT,${ALL_TGTS}, $(addprefix ${${TGT}_TGTDIR}/,${TGT}))
 $(foreach TGT,${ALL_TGTS},$(eval $(call ADD_DEP,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT}))))
 
 # EXPORT TARGETS TO THEIR EXPORT_DIR PATHS, WHICH ARE RELATIVE TO $(EXPORT_DIR_BASE)
-$(foreach TGT,${ALL_TGTS},$(if $(filter-out ${${TGT}_TGTDIR},${${TGT}_EXPORTDIR}),\
-    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT}),$(addprefix ${${TGT}_EXPORTDIR}/,${TGT})))))
+$(foreach TGT,${ALL_TGTS},\
+  $(foreach EXP,${${TGT}_EXPORTDIR},$(if $(filter-out ${${TGT}_TGTDIR},${EXP}),\
+    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT}),$(addprefix ${EXP}/,${TGT}))))))
 
 # CREATE TARGET DIRECTORIES ONLY ONCE
 ALLDIRS=$(foreach TGT,${ALL_TGTS},${${TGT}_TGTDIR} ${${TGT}_EXPORTDIR})
