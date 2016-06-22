@@ -187,7 +187,7 @@ endef
 #$(eval $(info 1=${1} 2=${2} 3=${3}))
 define EXPORT_FILE
 all: ${3}
-${3}: |${2}
+${3}: ${2}
 	ln -sf ${2} ${3}
 
 ${3}: |$(strip $(dir ${3}))
