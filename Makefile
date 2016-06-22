@@ -44,7 +44,7 @@ define ADD_CLEAN_RULE
 clean: clean_${1}
 .PHONY: clean_${1}
 clean_${1}:
-	$$(strip rm -f \
+	$$(strip rm -rf \
 	  ${${1}_TGTDIR}/${1} \
 	  ${${1}_EXPORTDIR}/${1} \
 	  ${${1}_TGTDIR}/{*_info,*.py,*.pyc} \
@@ -195,7 +195,7 @@ ${3}: |$(strip $(dir ${3}))
 clean_${1}: clean_${3}
 .PHONY: clean_${3}
 clean_${3}:
-	rm -f ${3}
+	rm -rf ${3}
 endef
 
 #$(strip ${1}):
