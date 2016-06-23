@@ -187,7 +187,7 @@ endef
 #$(eval $(info 1=${1} 2=${2} 3=${3}))
 define EXPORT_FILE
 all: ${3}
-${3}: ${2}
+${3}:${2}
 	ln -sf ${2} ${3}
 
 ${3}: |$(strip $(dir ${3}))
@@ -247,7 +247,11 @@ define ADD_TARGET_RULE
         $${${1}_TGTDIR}/${1}: |$${${1}_TGTDIR}
 
 # RE-ENABLE IF WE REMOVE THE .PHONY TARGET MAPPING
-        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES} $$(foreach PRE,$${${1}_PREREQS},$$(if $$(findstring $$(suffix $${PRE}),$${LIB_EXT}),$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))) $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_EXPORTDIR}/,$${PRE}))
+        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} \
+                              $${${1}_MKFILES} $$(foreach PRE,$${${1}_PREREQS},\
+                                                          $$(if $$(findstring $$(suffix $${PRE}),$${LIB_EXT}),\
+                                                                $$(addprefix $${$${PRE}_TGTDIR}/,$${PRE})))\
+                            | $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_TGTDIR}/,$${PRE}))
 # END RE-ENABLE        
 #        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS} $${$${1}_MKFILES}
 	     @echo $${${1}_LINKER} $$(notdir $$@)...
