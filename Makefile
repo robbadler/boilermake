@@ -188,7 +188,7 @@ endef
 define EXPORT_FILE
 all: ${3}
 ${3}:${2}
-	ln -sf ${2} ${3}
+	ln -fs ${2} ${3}
 
 ${3}: |$(strip $(dir ${3}))
 
@@ -207,7 +207,7 @@ endef
 define ADD_QPLUGIN_INFO_RULE
 ${1}: ${${1}_TGTDIR}/$(notdir ${2})
 ${${1}_TGTDIR}/$(notdir ${2}):
-	ln -sf ${2} ${${1}_TGTDIR}
+	ln -fs ${2} ${${1}_TGTDIR}
 endef
 
 # ADD_TARGET_RULE - Parameterized "function" that adds a new target to the
