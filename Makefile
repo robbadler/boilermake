@@ -262,7 +262,8 @@ define ADD_TARGET_RULE
 	        -Wl,--whole-archive \
 	        $${${1}_OBJS} $${${1}_STATICLIBS} \
 	        -Wl,--no-whole-archive \
-	        $${LDLIBS} $${${1}_LDLIBS})
+	        $${LDLIBS} \
+	        $$(foreach PRE,$${${1}_PREREQS},$$(addprefix -L,$${$${PRE}_TGTDIR})))  $${${1}_LDLIBS}
 #		-Wl,--as-needed 
 	     $${${1}_POSTMAKE}
     endif
