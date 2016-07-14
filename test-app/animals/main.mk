@@ -7,7 +7,7 @@
 # subdirectory.
 
 BUILD_DIR  := ../build/animals
-TARGET_DIR := ..
+TARGET_DIR := ../lib
 
 CXXFLAGS := -g -O0 -Wall -pipe
 
