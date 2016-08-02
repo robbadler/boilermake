@@ -27,6 +27,9 @@
 #       instances of "$" within them need to be escaped with a second "$" to
 #       accomodate the double expansion that occurs when eval is invoked.
 
+# Disable built-in rules
+.SUFFIXES:
+
 #disable dumb lex/yacc rules
 %.c:%.y
 %.c:%.l
@@ -522,7 +525,7 @@ define INCLUDE_SUBMAKEFILE
         SOURCES     := $$(call CANONICAL_PATH,$${SOURCES})
         SRC_SYSINCS := $$(filter -isystem%,$${SRC_INCDIRS})
         SRC_INCDIRS := $$(call QUALIFY_PATH,$${DIR},$$(filter-out -isystem%,$${SRC_INCDIRS}))
-        SRC_INCDIRS := $$(call CANONICAL_PATH,$${SRC_INCDIRS}) $${SRC_SYSINCS}
+        SRC_INCDIRS := $$(strip $$(call CANONICAL_PATH,$${SRC_INCDIRS}) $${SRC_SYSINCS})
 
         # Save the list of source files for this target.
         $${TGT}_SOURCES += $${SOURCES}
@@ -546,9 +549,9 @@ define INCLUDE_SUBMAKEFILE
         $${OBJS}: SRC_CFLAGS   := $${$${TGT}_CFLAGS} $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${$${TGT}_CXXFLAGS} $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS     := $$(addprefix -D,$${$${TGT}_DEFS} $${SRC_DEFS})
-        $${OBJS}: SRC_INCDIRS  := $$(addprefix -I,$$(filter-out -isystem%,$$(filter-out -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}))) \
+        $${OBJS}: SRC_INCDIRS  := $$(strip $$(addprefix -I,$$(filter-out -isystem%,$$(filter-out -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}))) \
                                      $$(filter -I%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}) \
-                                     $$(filter -isystem%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS})
+                                     $$(filter -isystem%,$${$${TGT}_INCDIRS} $${SRC_INCDIRS}))
         $${OBJS}: SWIG_FLAGS   := $${$${TGT}_SWIG_FLAGS}
         $${OBJS}: MOC_FLAGS    := $${$${TGT}_MOC_FLAGS}
         $${OBJS}: YACC_FLAGS   := $${YACC_FLAGS}
@@ -741,7 +744,8 @@ $(foreach TGT,${ALL_TGTS},\
   $(foreach DIR,${${TGT}_SRCDIRS},\
     $(foreach EXT,${C_SRC_EXTS},\
       $(eval $(call ADD_OBJECT_RULE2,$(subst /src/,/$(VCO)/,${DIR}),\
-             $(addprefix ${DIR}/,${EXT}),$${COMPILE_C_CMDS})))))
+                                     $(addprefix ${DIR}/,${EXT}),\
+                                     $${COMPILE_C_CMDS})))))
 # ROOK VERSION
 #$(foreach TGT,${ALL_TGTS},\
   $(foreach EXT,${C_SRC_EXTS},\
@@ -755,7 +759,8 @@ $(foreach TGT,${ALL_TGTS},\
   $(foreach DIR,${${TGT}_SRCDIRS},\
     $(foreach EXT,${CXX_SRC_EXTS},\
       $(eval $(call ADD_OBJECT_RULE2,$(subst /src/,/$(VCO)/,${DIR}),\
-               $(addprefix ${DIR}/,${EXT}),$${COMPILE_CXX_CMDS}))\
+                                     $(addprefix ${DIR}/,${EXT}),\
+                                     $${COMPILE_CXX_CMDS}))\
     )\
   )\
 )
