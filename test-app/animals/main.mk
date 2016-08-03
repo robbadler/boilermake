@@ -6,7 +6,7 @@
 # libanimals.a library by itself by running "make" from within the "animals"
 # subdirectory.
 
-BUILD_DIR  := ../build/animals
+BUILD_DIR  := ../build
 TARGET_DIR := ../lib
 
 CXXFLAGS := -g -O0 -Wall -pipe

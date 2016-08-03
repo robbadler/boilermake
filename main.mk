@@ -87,7 +87,7 @@ CWD := $(addsuffix /,$(shell pwd))
 BUILD_DIR := build
 #BUILD_DIR := $(addprefix ${CWD},${BUILD_DIR})
 
-TARGET_DIR_BASE := $(addprefix ${ROOT}/,allLibs)
+TARGET_DIR := $(addprefix ${ROOT}/,allLibs)
 EXPORT_DIR_BASE := $(MGC_HOME)/lib
 LDFLAGS := \
            -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \

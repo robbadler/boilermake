@@ -205,7 +205,7 @@ endef
 #$(strip ${1}):
 define MAKE_DIR
 $(strip ${1}):
-	mkdir -p ${1}
+	$(Q)mkdir -p ${1}
 endef
 
 define ADD_QPLUGIN_INFO_RULE
@@ -223,8 +223,10 @@ endef
 #
 ##$(eval $(info ${1}_OBJS=[${${1}_OBJS} ${1}_PREREQS=[${${1}_PREREQS}]))
 define ADD_TARGET_RULE
+    # Create the target dir location if needed
+    $${${1}_TGTDIR}/${1}: |$${${1}_TGTDIR}
+
     ifeq "$$(suffix ${1})" "${LIB_EXT}"
-        ${1} : |$$(dir $${1})
 
         # Add a target for creating a static library.
         $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES}
@@ -247,8 +249,6 @@ define ADD_TARGET_RULE
                 ${1}_LINKER = $${CC}
             endif
         endif
-
-        $${${1}_TGTDIR}/${1}: |$${${1}_TGTDIR}
 
 # RE-ENABLE IF WE REMOVE THE .PHONY TARGET MAPPING
         $${${1}_TGTDIR}/${1}: $${${1}_OBJS} \
@@ -369,7 +369,6 @@ define INCLUDE_SUBMAKEFILE
     # Initialize all variables that can be defined by a makefile fragment, then
     # include the specified makefile fragment.
     TARGET        :=
-    TARGET_DIR    :=
     TGT_CFLAGS    :=
     TGT_CXXFLAGS  :=
     TGT_DEFS      :=
@@ -422,15 +421,8 @@ define INCLUDE_SUBMAKEFILE
     endif
 
     ifeq "$$(strip $${TARGET_DIR})" ""
-        TARGET_DIR := $${TARGET_DIR_BASE}
-    else
-        TARGET_DIR := $$(call CANONICAL_PATH,$$(addprefix $${TARGET_DIR_BASE}/,$${TARGET_DIR}))
+        TARGET_DIR := .
     endif
-
-#    TARGET_DIR := $$(subst src,$$(VCO),$$(DIR))
-
-    TARGET_DIR_STACK := $$(call PUSH,$${TARGET_DIR_STACK},$${TARGET_DIR})
-	 #TARGET_DIR := $$(call PEEK,$${TARGET_DIR_STACK})
 
     ifneq "$$(strip $${EXPORT_DIR})" ""
         EXPORT_DIR := $$(call CANONICAL_PATH,$$(addprefix $${EXPORT_DIR_BASE}/,$${EXPORT_DIR}))
@@ -454,7 +446,7 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_SRCDIRS   :=
         TGT_INCDIRS       := $${DIR} $${TGT_INCDIRS}
         TGT_INCDIRS       := $$(call QUALIFY_PATH,$${DIR},$${TGT_INCDIRS})
-        TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
+        TGT_INCDIRS       := $$(sort $$(call CANONICAL_PATH,$${TGT_INCDIRS}))
         $${TGT}_INCDIRS   := $${TGT_INCDIRS}
         $${TGT}_LDFLAGS   :=
         ifeq "$$(suffix $${TGT})" "$(SLIB_EXT)"
@@ -488,10 +480,6 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_CXXFLAGS  += $${TGT_CXXFLAGS}
         $${TGT}_DEFS      += $${TGT_DEFS}
         $${TGT}_MKFILES   += $$(strip ${1})
-        TGT_INCDIRS       := $${DIR} $${TGT_INCDIRS}
-        TGT_INCDIRS       := $$(call QUALIFY_PATH,$${DIR},$${TGT_INCDIRS})
-        TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
-        $${TGT}_INCDIRS   += $${TGT_INCDIRS}
         $${TGT}_LDFLAGS   += $${TGT_LDFLAGS}
         $${TGT}_STATICLIBS += $$(filter %.a,$${TGT_LDLIBS})
         $${TGT}_LDLIBS    += $$(filter-out %.a,$${TGT_LDLIBS})
@@ -612,9 +600,6 @@ define INCLUDE_SUBMAKEFILE
     TGT_STACK := $$(call POP,$${TGT_STACK})
     TGT := $$(call PEEK,$${TGT_STACK})
 
-	 # RCDH - multi-target
-    TARGET_DIR_STACK := $$(call POP,$${TARGET_DIR_STACK})
-
     # Reset the "current" directory to it's previous value.
     DIR_STACK := $$(call POP,$${DIR_STACK})
     DIR := $$(call PEEK,$${DIR_STACK})
@@ -700,7 +685,6 @@ DEFS :=
 DIR_STACK :=
 INCDIRS :=
 TGT_STACK :=
-TARGET_DIR_BASE := ./
 EXPORT_DIR_BASE := ./
 
 # Include the main user-supplied submakefile. This also recursively includes
@@ -720,7 +704,7 @@ INCDIRS := $(addprefix -I,$(call CANONICAL_PATH,${INCDIRS}))
 all: $(foreach TGT,${ALL_TGTS}, $(addprefix ${${TGT}_TGTDIR}/,${TGT}))
 
 # ADDED FOR SHORTHAND OF LIB/TARGET NAMES
-#.PHONY: ${ALL_TGTS}
+.PHONY: ${ALL_TGTS}
 $(foreach TGT,${ALL_TGTS},\
   $(if $(filter-out $(call CANONICAL_PATH,${TGT}),$(call CANONICAL_PATH,$(addprefix ${${TGT}_TGTDIR}/,${TGT}))),\
     $(eval $(call ADD_DEP,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT})))))
