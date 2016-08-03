@@ -34,11 +34,6 @@ ifeq ($(USE_CCACHE), 0)
 PREFIX_CMD = $(DISTCC_BIN)
 endif
 
-NOQUIET ?= 0
-ifeq ($(NOQUIET), 1)
-QUIET :=
-endif
-
 CXX = /project/dsm/cicd/tools/color_compile/bin/c++
 #CXX := /usr/bin/c++
 
@@ -90,8 +85,9 @@ ROOT := $(abspath ..)
 CWD := $(addsuffix /,$(shell pwd))
 
 BUILD_DIR := build
-BUILD_DIR := $(addprefix ${CWD},${BUILD_DIR})
+#BUILD_DIR := $(addprefix ${CWD},${BUILD_DIR})
 
+TARGET_DIR_BASE := $(addprefix ${ROOT}/,allLibs)
 EXPORT_DIR_BASE := $(MGC_HOME)/lib
 LDFLAGS := \
            -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \

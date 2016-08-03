@@ -2,8 +2,8 @@ CXXFLAGS := -g -O0 -Wall -pipe
 
 SUBMAKEFILES := talk.mk animals/animals.mk
 
-ROOT := $(abspath .)
-CWD := $(addsuffix /,$(shell pwd))
-#BUILD_DIR := $(addprefix ${CWD},${BUILD_DIR})
+#ROOT := $(abspath .)
+#CWD := $(addsuffix /,$(shell pwd))
+
 EXPORT_DIR_BASE := ./
 

@@ -34,8 +34,11 @@
 %.c:%.y
 %.c:%.l
 
-# QUIET is to make clean output
-QUIET := @
+# Q is to make clean output
+QUIET ?= 1
+ifeq ($(QUIET),1)
+Q := @
+endif
 
 # ADD_CLEAN_RULE - Parameterized "function" that adds a new rule and phony
 #   target for cleaning the specified target (removing its build-generated
@@ -67,14 +70,12 @@ endef
 #
 define ADD_OBJECT_RULE
 ${1}/%.o: $(join ${ROOT}/,${2})
-	$(QUIET)${3}
+	$(Q)${3}
 endef
 #$(eval $(info 1=${1} 2=${2}))
 define ADD_OBJECT_RULE2
 ${1}/%.o: ${2}
-	$(QUIET)${3}
-#$(wildcard ${ROOT}/*${VCO})/%.o : $(join $(wildcard ${ROOT}/*src)/,${2})
-#	$(QUIET)${3}
+	$(Q)${3}
 endef
 
 # ADD_MOC_RULE - Parameterized "function" that adds a pattern rule for
@@ -85,7 +86,7 @@ endef
 #
 define ADD_MOC_RULE
 moc_%.cpp: ${2}
-	$(QUIET)${3}
+	$(Q)${3}
 endef
 
 # SPECIFIC_MOC_RULE - Parameterized "function" that adds a specific rule for
@@ -96,7 +97,7 @@ endef
 #
 define SPECIFIC_MOC_RULE
 %moc_$(basename $(notdir ${2})).cpp: ${2}
-	$(QUIET)${3}
+	$(Q)${3}
 endef
 
 # ADD_LEX_RULE
@@ -106,15 +107,15 @@ endef
 #
 define ADD_LEX_RULE
 %_l.cxx: ${2}
-	$(QUIET)${3}
+	$(Q)${3}
 
 clean_${1} : clean_$(strip ${1})_$(strip ${2})
 clean_$(strip ${1})_$(strip ${2}) :
 	rm -f $(addsuffix *_l.cxx,$(addsuffix /,${${1}_SRCDIRS}))
 endef
 
-# ADD_YACC_DEPEND - Parameterized "function" that sets up the dependency on a 
-#   YACC (bison) generated file. They may be cleaned up correctly, and only 
+# ADD_YACC_DEPEND - Parameterized "function" that sets up the dependency on a
+#   YACC (bison) generated file. They may be cleaned up correctly, and only
 #   generated once instead of repeatedly for each dep file change.
 #
 #   ADD_YACC_DEPEND <src>.o <yacc_gen>_p.o <yacc_gen>_p.h <yacc_gen>_p.cxx <TGT>
@@ -142,7 +143,7 @@ endef
 #%.o:${1}
 define ADD_YACC_RULE
 %_p.cxx %_p.h:${2}
-	$(QUIET)${3}
+	$(Q)${3}
 %_p.h:%_p.cxx
 
 clean_${1} : clean_$(strip ${1})_$(strip ${2})
@@ -158,11 +159,11 @@ endef
 #
 define ADD_SWIG_RULE
 $(addprefix ${1}/,%_pywrap.cxx) $(addprefix ${3}/,%.py): $(addprefix ${1}/,${2})
-	$(QUIET)${4}
+	$(Q)${4}
 $(addprefix ${3}/,%.py) : $(addprefix ${1}/,%_pywrap.cxx)
 
 $(addprefix ${1}/,%_wrap.cxx) $(addprefix ${3}/,%.py): $(addprefix ${1}/,${2})
-	$(QUIET)${4}
+	$(Q)${4}
 $(addprefix ${3}/,%.py) : $(addprefix ${1}/,%_wrap.cxx)
 endef
 
@@ -179,7 +180,7 @@ endef
 #   argument is the qt rule for packaging resources
 define ADD_RESOURCE_RULE
 qrc_%.cxx: ${2}
-	$(QUIET)${3}
+	$(Q)${3}
 endef
 
 # EXPORT_FILE - Parameterized "function" to put a target into a specified location
@@ -198,7 +199,7 @@ ${3}: |$(strip $(dir ${3}))
 clean_${1}: clean_${3}
 .PHONY: clean_${3}
 clean_${3}:
-	rm -rf ${3}
+	rm -f ${3}
 endef
 
 #$(strip ${1}):
@@ -210,7 +211,7 @@ endef
 define ADD_QPLUGIN_INFO_RULE
 ${1}: ${${1}_TGTDIR}/$(notdir ${2})
 ${${1}_TGTDIR}/$(notdir ${2}):
-	ln -fs ${2} ${${1}_TGTDIR}
+	ln -sf ${2} ${${1}_TGTDIR}
 endef
 
 # ADD_TARGET_RULE - Parameterized "function" that adds a new target to the
@@ -220,15 +221,15 @@ endef
 #
 #   USE WITH EVAL
 #
+##$(eval $(info ${1}_OBJS=[${${1}_OBJS} ${1}_PREREQS=[${${1}_PREREQS}]))
 define ADD_TARGET_RULE
     ifeq "$$(suffix ${1})" "${LIB_EXT}"
         ${1} : |$$(dir $${1})
 
         # Add a target for creating a static library.
         $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_MKFILES}
-        ##$${TARGET_DIR}/${1}: $${${1}_OBJS}
 	     @echo ar $$(notdir $$@)...
-	     $(QUIET)$$(strip $${AR} $${ARFLAGS} $$@ $${${1}_OBJS})
+	     $(Q)$$(strip $${AR} $${ARFLAGS} $$@ $${${1}_OBJS}) > /dev/null 2>&1 
 	     $${${1}_POSTMAKE}
     else
         # Add a target for linking an executable. First, attempt to select the
@@ -240,11 +241,11 @@ define ADD_TARGET_RULE
             # No linker was explicitly specified to be used for this target. If
             # there are any C++ sources for this target, use the C++ compiler.
             # For all other targets, default to using the C compiler.
-#            ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SOURCES}))" ""
+            ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SOURCES}))" ""
                 ${1}_LINKER = $${CXX}
-#            else
-#                ${1}_LINKER = $${CC}
-#            endif
+            else
+                ${1}_LINKER = $${CC}
+            endif
         endif
 
         $${${1}_TGTDIR}/${1}: |$${${1}_TGTDIR}
@@ -260,7 +261,7 @@ define ADD_TARGET_RULE
 	     @echo $${${1}_LINKER} $$(notdir $$@)...
 #	     $$(strip $${${1}_LINKER} -o $$@ $${LDFLAGS} $${${1}_LDFLAGS} \
 #	        --whole-archive $${${1}_OBJS} --no-whole-archive $${LDLIBS} $${${1}_LDLIBS})
-	     $(QUIET)$$(strip $${${1}_LINKER} -o $$@ \
+	     $(Q)$$(strip $${${1}_LINKER} -o $$@ \
 	        $${LDFLAGS} $${CXXFLAGS} $${${1}_LDFLAGS} \
 	        -Wl,--whole-archive \
 	        $${${1}_OBJS} $${${1}_STATICLIBS} \
@@ -285,12 +286,12 @@ endef
 # COMPILE_C_CMDS - Commands for compiling C source code.
 define COMPILE_C_CMDS
 	@echo $(strip ${CC}) $(notdir $@)...
-	$(QUIET)mkdir -p $(dir $@)
-	$(QUIET)$(strip ${CC} -o $@ -c -MMD -MF $(addsuffix .d,$(basename $@)) ${CFLAGS} ${SRC_CFLAGS} \
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(strip ${CC} -o $@ -c -MMD -MF $(addsuffix .d,$(basename $@)) ${CFLAGS} ${SRC_CFLAGS} \
 	     ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
 	     ${SRC_DEFS} ${DEFS} $<)
-	$(QUIET)cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
-	$(QUIET)sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+	$(Q)cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
+	$(Q)sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	    -e '/^$$/ d' -e 's/$$/ :/' < ${@:%$(suffix $@)=%.d} \
 	    >> ${@:%$(suffix $@)=%.P}; \
 	 rm -f ${@:%$(suffix $@)=%.d}
@@ -299,63 +300,63 @@ endef
 # COMPILE_CXX_CMDS - Commands for compiling C++ source code.
 define COMPILE_CXX_CMDS
 	@echo $(strip ${CXX}) $(notdir $@)...
-	$(QUIET)mkdir -p $(dir $@)
+	$(Q)mkdir -p $(dir $@)
 	$(strip ${PREFIX_CMD} ${CXX} -o $@ -c -fpch-preprocess -MMD -MT $@ -MF $(addsuffix .d,$(basename $@)) ${CXXFLAGS} ${SRC_CXXFLAGS} \
 	    ${SRC_INCDIRS} ${SYSTEM_INCDIRS} \
 	    ${SRC_DEFS} ${DEFS} $<)
-	cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
-	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+	$(Q)cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
+	    sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	    -e '/^$$/ d' -e 's/$$/ :/' < ${@:%$(suffix $@)=%.d} \
 	    >> ${@:%$(suffix $@)=%.P}; \
-	rm -f ${@:%$(suffix $@)=%.d}
-	$(QUIET)$(if $(findstring moc_,$(strip $@)),\
+	    rm -f ${@:%$(suffix $@)=%.d}
+	$(Q)$(if $(findstring moc_,$(strip $@)),\
 		sed -e 's#\S*moc_\S*\.cpp.*#\\#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
 		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
 	)
-	$(QUIET)$(if $(findstring _wrap,$(strip $@)),\
+	$(Q)$(if $(findstring _wrap,$(strip $@)),\
 		sed -e 's#_wrap\.cxx#\.i#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
 		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
 	)
-	$(QUIET)$(if $(findstring _pywrap,$(strip $@)),\
+	$(Q)$(if $(findstring _pywrap,$(strip $@)),\
 		sed -e 's#_pywrap\.cxx#\.i#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
 		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
 	)
-	$(QUIET)$(if $(findstring _l.,$(strip $@)),\
+	$(Q)$(if $(findstring _l.,$(strip $@)),\
 		sed -e 's#_l\.cxx#\.l#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
 		mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}\
 	)
-	sed -e 's#_p\.cxx#\.y#' -e 's#_p\.h#\.y#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
+	$(Q)sed -e 's#_p\.cxx#\.y#' -e 's#_p\.h#\.y#' -e 's#^\\##' < ${@:%$(suffix $@)=%.P} >> ${@:%$(suffix $@)=%.d};\
 	mv ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}
 endef
 
 # GENERATE_MOC_CMDS - Command for calling Qt moc on inputs to create C++ code
 define GENERATE_MOC_CMDS
 	@echo moc $@...
-	$(QUIET)$(strip ${DISTCC_BIN} ${MOC} -nw ${MOC_FLAGS} -o $@ $(patsubst -isystem%,-I%,${SRC_INCDIRS}) ${INCDIRS} $<)
+	$(Q)$(strip ${DISTCC_BIN} ${MOC} -nw ${MOC_FLAGS} -o $@ $(patsubst -isystem%,-I%,${SRC_INCDIRS}) ${INCDIRS} $<)
 endef
 
 # GENERATE_LEX_CMDS - Command for calling lex to generate C++ code
 define GENERATE_LEX_CMDS
 	@echo lex $@...
-	$(QUIET)$(strip ${LEX} -Ca -o $@ $<)
+	$(Q)$(strip ${LEX} -Ca -o $@ $<)
 endef
 
 # GENERATE_YACC_CMDS - Command for calling yacc to generate C++ code
 define GENERATE_YACC_CMDS
 	@echo yacc $@...
-	$(QUIET)$(strip ${YACC} ${YACC_FLAGS} --defines=$(call CANONICAL_PATH,$(dir $@)/$(subst .y,_p.h,$(notdir $<))) -o ${@:.h=.cxx}  $<)
+	$(Q)$(strip ${YACC} ${YACC_FLAGS} --defines=$(call CANONICAL_PATH,$(dir $@)/$(subst .y,_p.h,$(notdir $<))) -o ${@:.h=.cxx}  $<)
 endef
 
 # GENERATE_SWIG_CMDS - Commands for calling swig to generate C++ and python.
 define GENERATE_SWIG_CMDS
 	@echo swig $@...
-	$(QUIET)$(strip ${SWIG}  -c++ -python -o $(subst /$(VCO)/,/src/,${@:.py=${PYEXT}}) -outdir ${TGTDIR} ${SRC_INCDIRS} ${INCDIRS} ${SWIG_FLAGS} $<);
+	$(Q)$(strip ${SWIG}  -c++ -python -o $(subst /$(VCO)/,/src/,${@:.py=${PYEXT}}) -outdir ${TGTDIR} ${SRC_INCDIRS} ${INCDIRS} ${SWIG_FLAGS} $<);
 endef
 
 # GENERATE_RCC_CMDS - Commands for packaging Qt resource files
 define GENERATE_RCC_CMDS
 	@echo rcc $@
-	$(QUIET)$(strip ${RCC} -name $(notdir $*) -o $@ $<)
+	$(Q)$(strip ${RCC} -name $(notdir $*) -o $@ $<)
 endef
 
 # INCLUDE_SUBMAKEFILE - Parameterized "function" that includes a new
@@ -414,18 +415,19 @@ define INCLUDE_SUBMAKEFILE
     # Ensure that valid values are set for BUILD_DIR and TARGET_DIR.
     ifeq "$$(strip $${BUILD_DIR})" ""
         BUILD_DIR := build
-        BUILD_DIR := $$(addprefix $${CWD}/,$${BUILD_DIR})
-        BUILD_DIR := $$(call CANONICAL_PATH,$${BUILD_DIR})
+#        BUILD_DIR := $$(addprefix ${CWD}/,$${BUILD_DIR})
+#        BUILD_DIR := $$(call CANONICAL_PATH,$${BUILD_DIR})
+    else
+	     BUILD_DIR := $$(call CANONICAL_PATH,$${BUILD_DIR})
     endif
 
     ifeq "$$(strip $${TARGET_DIR})" ""
-        TARGET_DIR := $$(call PEEK,$${TARGET_DIR_STACK})
-        ifeq "$$(strip $${TARGET_DIR})" ""
-            TARGET_DIR := .
-        endif
+        TARGET_DIR := $${TARGET_DIR_BASE}
+    else
+        TARGET_DIR := $$(call CANONICAL_PATH,$$(addprefix $${TARGET_DIR_BASE}/,$${TARGET_DIR}))
     endif
 
-    TARGET_DIR := $$(subst src,$$(VCO),$$(DIR))
+#    TARGET_DIR := $$(subst src,$$(VCO),$$(DIR))
 
     TARGET_DIR_STACK := $$(call PUSH,$${TARGET_DIR_STACK},$${TARGET_DIR})
 	 #TARGET_DIR := $$(call PEEK,$${TARGET_DIR_STACK})
@@ -536,9 +538,10 @@ define INCLUDE_SUBMAKEFILE
         ## UNCERTAIN PROVENENCE 
 #        OBJS := $$(addprefix $${BUILD_DIR}/,$$(subst $${ROOT},,$$(addsuffix .o,$${basename $${SOURCES}})))
         ## DET VERSION
-        OBJS := $$(subst /src/,/${VCO}/,$$(addsuffix .o,$$(basename $${SOURCES})))
+#        OBJS := $$(subst /src/,/${VCO}/,$$(addsuffix .o,$$(basename $${SOURCES})))
         ## ROOK VERSION
-#         OBJS := $$(addprefix $$(addsuffix /$${BUILD_DIR}/,$$(DIR)),$$(addsuffix .o,$$(basename $$(notdir $${SOURCES}))))
+#        OBJS := $$(addprefix $$(addsuffix /$${BUILD_DIR}/,$$(DIR)),$$(addsuffix .o,$$(basename $$(notdir $${SOURCES}))))
+        OBJS := $$(addprefix $${BUILD_DIR}/$${TGT}/,$$(addsuffix .o,$$(basename $$(notdir $${SOURCES}))))
 
 
         # Add the objects to the current target's list of objects, and create
@@ -697,7 +700,8 @@ DEFS :=
 DIR_STACK :=
 INCDIRS :=
 TGT_STACK :=
-EXPORT_DIR_BASE :=
+TARGET_DIR_BASE := ./
+EXPORT_DIR_BASE := ./
 
 # Include the main user-supplied submakefile. This also recursively includes
 # all other user-supplied submakefiles.
@@ -716,13 +720,17 @@ INCDIRS := $(addprefix -I,$(call CANONICAL_PATH,${INCDIRS}))
 all: $(foreach TGT,${ALL_TGTS}, $(addprefix ${${TGT}_TGTDIR}/,${TGT}))
 
 # ADDED FOR SHORTHAND OF LIB/TARGET NAMES
-.PHONY: ${ALL_TGTS}
-$(foreach TGT,${ALL_TGTS},$(eval $(call ADD_DEP,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT}))))
+#.PHONY: ${ALL_TGTS}
+$(foreach TGT,${ALL_TGTS},\
+  $(if $(filter-out $(call CANONICAL_PATH,${TGT}),$(call CANONICAL_PATH,$(addprefix ${${TGT}_TGTDIR}/,${TGT}))),\
+    $(eval $(call ADD_DEP,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT})))))
 
 # EXPORT TARGETS TO THEIR EXPORT_DIR PATHS, WHICH ARE RELATIVE TO $(EXPORT_DIR_BASE)
 $(foreach TGT,${ALL_TGTS},\
-  $(foreach EXP,${${TGT}_EXPORTDIR},$(if $(filter-out ${${TGT}_TGTDIR},${EXP}),\
-    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT}),$(addprefix ${EXP}/,${TGT}))))))
+  $(foreach EXP,${${TGT}_EXPORTDIR},\
+	  $(if $(filter-out $(call CANONICAL_PATH,${${TGT}_TGTDIR}),$(call CANONICAL_PATH,${EXP})),\
+                                    $(if $(filter-out $(call CANONICAL_PATH,$(dir ${TGT})),$(call CANONICAL_PATH,${EXP})),\
+    $(eval $(call EXPORT_FILE,${TGT},$(addprefix ${${TGT}_TGTDIR}/,${TGT}),$(addprefix ${EXP}/,${TGT})))))))
 
 # CREATE TARGET DIRECTORIES ONLY ONCE
 ALLDIRS=$(foreach TGT,${ALL_TGTS},${${TGT}_TGTDIR} ${${TGT}_EXPORTDIR})
@@ -739,37 +747,20 @@ $(foreach TGT,${ALL_TGTS},\
   $(eval $(call ADD_TARGET_RULE,${TGT})))
 
 # Add pattern rule(s) for creating compiled object code from C source.
-# DET VERSION
 $(foreach TGT,${ALL_TGTS},\
-  $(foreach DIR,${${TGT}_SRCDIRS},\
-    $(foreach EXT,${C_SRC_EXTS},\
-      $(eval $(call ADD_OBJECT_RULE2,$(subst /src/,/$(VCO)/,${DIR}),\
-                                     $(addprefix ${DIR}/,${EXT}),\
-                                     $${COMPILE_C_CMDS})))))
-# ROOK VERSION
-#$(foreach TGT,${ALL_TGTS},\
   $(foreach EXT,${C_SRC_EXTS},\
     $(foreach DIR,${${TGT}_SRCDIRS},\
-      $(eval $(call ADD_OBJECT_RULE,$(addprefix ${DIR},/${BUILD_DIR}),\
-           $(addprefix ${DIR}/,$(strip ${EXT})),$${COMPILE_C_CMDS})))))
+      $(eval $(call ADD_OBJECT_RULE2,${BUILD_DIR}/${TGT},\
+                                     $(addprefix ${DIR}/,$(strip ${EXT})),\
+                                     $${COMPILE_C_CMDS})))))
 
 # Add pattern rule(s) for creating compiled object code from C++ source.
-# DET VERSION
 $(foreach TGT,${ALL_TGTS},\
-  $(foreach DIR,${${TGT}_SRCDIRS},\
-    $(foreach EXT,${CXX_SRC_EXTS},\
-      $(eval $(call ADD_OBJECT_RULE2,$(subst /src/,/$(VCO)/,${DIR}),\
-                                     $(addprefix ${DIR}/,${EXT}),\
-                                     $${COMPILE_CXX_CMDS}))\
-    )\
-  )\
-)
-# ROOK VERSION
-#$(foreach TGT,${ALL_TGTS},\
   $(foreach EXT,${CXX_SRC_EXTS},\
-    $(foreach DIR,${${TGT}_SRCDIRS},\
-      $(eval $(call ADD_OBJECT_RULE,$(addprefix ${DIR},/${BUILD_DIR}),\
-             $(addprefix ${DIR}/,$(strip ${EXT})),$${COMPILE_CXX_CMDS})))))
+    $(foreach DIR,$(sort ${${TGT}_SRCDIRS}),\
+      $(eval $(call ADD_OBJECT_RULE2,${BUILD_DIR}/${TGT},\
+                                     $(addprefix ${DIR}/,$(strip ${EXT})),\
+                                     $${COMPILE_CXX_CMDS})))))
 
 # Add "clean" rules to remove all build-generated files.
 .PHONY: clean
@@ -846,8 +837,8 @@ $(foreach TGT,${ALL_TGTS},\
 ##$(eval $(info $$MOCCABLE is [${MOCCABLE}]));\
 
 ui_%.h: %.ui
-	$(QUIET)echo Create UI header $@
-	$(QUIET)$(strip $(UIC) -o $@ $<)
+	$(Q)echo Create UI header $@
+	$(Q)$(strip $(UIC) -o $@ $<)
 
 $(foreach TGT,${ALL_TGTS},\
   $(foreach UI,${${TGT}_UI_NAMES},\
