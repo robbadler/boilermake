@@ -50,7 +50,7 @@ endif
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
 CXXFLAGS += $(CXXFLAGS_DBG)
-OPT = 0
+OPT ?= 0
 endif
 
 GCOV ?= 0
@@ -164,6 +164,9 @@ include tao.mk
 
 # PETSC
 include petsc.mk
+
+# VALGRIND and CALLGRIND
+include valgrind.mk
 
 INCDIRS := \
 			  $(ICFOA_INCDIRS) \
