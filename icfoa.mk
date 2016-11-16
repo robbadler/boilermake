@@ -12,7 +12,8 @@ endif
 
 ICFOA_HOME    := /wv/icfarch/icflow_wg_server/ic/icfoa/exports.v22-43_028-0-1_engr-$(VCO)/mgc_home
 
-ICFOA_INCDIRS := $(ICFOA_HOME)/shared/pkgs/icfoa_inhouse.$(VCO)/OA/include/oa \
+ICFOA_INCDIRS := $(ICFOA_HOME)/shared/pkgs/icfoa_inhouse.$(VCO)/OA/include \
+					  $(ICFOA_HOME)/shared/pkgs/icfoa_inhouse.$(VCO)/OA/include/oa \
 					  $(ICFOA_HOME)/shared/pkgs/icfoa_inhouse.$(VCO)/OA/include/oaLang
 
 ICFOA_INCLUDES := $(addprefix -isystem,$(ICFOA_INCDIRS))
