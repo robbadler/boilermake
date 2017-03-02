@@ -1,6 +1,7 @@
 $(eval $(info Starting GNU make))
 $(eval $(info Reading Mentor defs and command flags))
 
+CXXFLAGS :=
 DEFS := IC_ISO14882 \
 		  __STDC_LIMIT_MACROS \
 		  ANSI_STREAMS_SUPPORT \
@@ -22,6 +23,7 @@ DEFS := IC_ISO14882 \
 
 ifeq ($(VCO), aoi)
 DEFS += vco_aoi
+CXXFLAGS += -std=c++0xx
 else ifeq ($(VCO), aoh)
 DEFS += vco_aoh
 endif
@@ -43,7 +45,7 @@ endif
 CXX = /project/dsm/cicd/tools/color_compile/bin/c++
 #CXX := /usr/bin/c++
 
-CXXFLAGS := -fPIC -msse2 -mfpmath=sse -Wno-deprecated -pthread -Wno-attributes -std=c++0x
+CXXFLAGS += -fPIC -msse2 -mfpmath=sse -Wno-deprecated -pthread -Wno-attributes
 CXXFLAGS_DBG := -g -DDEBUG
 CXXFLAGS_OPT := -O3
 
