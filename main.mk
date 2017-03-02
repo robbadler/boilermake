@@ -20,6 +20,12 @@ DEFS := IC_ISO14882 \
 		  USE_DET \
 		  MEMDBG \
 
+ifeq ($(VCO), aoi)
+DEFS += vco_aoi
+else ifeq ($(VCO), aoh)
+DEFS += vco_aoh
+endif
+
 DISTCC_BIN = /project/dsm/cicd/tools/Distcc/aof/distcc-3.1/bin/distcc
 NO_DISTCC ?= 0
 ifeq ($(NO_DISTCC), 1)
@@ -37,7 +43,7 @@ endif
 CXX = /project/dsm/cicd/tools/color_compile/bin/c++
 #CXX := /usr/bin/c++
 
-CXXFLAGS := -fPIC -msse2 -mfpmath=sse -Wno-deprecated -pthread -Wno-attributes
+CXXFLAGS := -fPIC -msse2 -mfpmath=sse -Wno-deprecated -pthread -Wno-attributes -std=c++0x
 CXXFLAGS_DBG := -g -DDEBUG
 CXXFLAGS_OPT := -O3
 
