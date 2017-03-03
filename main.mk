@@ -23,7 +23,7 @@ DEFS := IC_ISO14882 \
 
 ifeq ($(VCO), aoi)
 DEFS += vco_aoi
-CXXFLAGS += -std=c++0xx
+CXXFLAGS += -std=c++0x
 else ifeq ($(VCO), aoh)
 DEFS += vco_aoh
 endif
