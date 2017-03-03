@@ -7,3 +7,5 @@ BOOST_INCLUDES := -isystem$(BOOST_INCDIRS)
 
 BOOST_LIBDIR := -Wl,-rpath-link=$(BOOST_BASEDIR)/pkgs/boost.$(VCO)/lib -L$(BOOST_BASEDIR)/pkgs/boost.$(VCO)/lib
 
+BOOST_RPATH := -Wl,-rpath=$(BOOST_BASEDIR)/pkgs/boost.$(VCO)/lib
+

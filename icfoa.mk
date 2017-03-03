@@ -35,3 +35,6 @@ ICFOA_TCL_LIB :=	-loaTclPlugIn \
 			-loaTclCommon \
 			-loaTclHelp \
 			-loaTcl
+
+ICFOA_RPATH := -Wl,-rpath=$(ICFOA_HOME)/pkgs/icfoa.$(VCO)/OA/lib/linux_rhel40_64/$(OA_TYPE)
+
