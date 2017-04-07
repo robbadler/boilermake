@@ -124,7 +124,7 @@ endef
 #$(strip ${1}):|$(strip ${3}) $(strip ${4})
 #$(eval $(info ADD_YACC_DEP 1=${1} 2=${2} 3=${3} 4=${4} 5=${5}))
 define ADD_YACC_DEPEND
-$(strip ${1}):|$(strip ${2})
+$(strip ${1}): $(strip ${3}) |$(strip ${2})
 
 clean_$(strip ${5}): clean_$(strip ${1})_$(strip ${3})_$(strip ${4})
 .PHONY: clean_$(strip ${1})_$(strip ${3})_$(strip ${4})
@@ -763,12 +763,12 @@ $(foreach TGT,${ALL_TGTS},\
 $(foreach TGT,${ALL_TGTS},\
   $(foreach SRC,${${TGT}_DEPENDS_ON_YACC},\
     $(eval $(call ADD_YACC_DEPEND,\
-                                       $(subst /src/,/$(VCO)/,$(addsuffix .o,$(basename ${SRC}))),\
-                                       $(subst /src/,/$(VCO)/,$(subst .y,_p.o,$(wildcard $(dir ${SRC})*.y))),\
-                                       $(subst .y,_p.h,$(wildcard $(dir ${SRC})*.y)),\
-                                       $(subst .y,_p.cxx,$(wildcard $(dir ${SRC})*.y)),\
-                                       $(TGT)\
-                                       ))\
+               $(addprefix ${BUILD_DIR}/${TGT}/,$(addsuffix .o,$(basename $(notdir ${SRC})))),\
+               $(addprefix ${BUILD_DIR}/${TGT}/,$(addsuffix _p.o,$(basename $(notdir $(wildcard $(dir ${SRC})*.y))))),\
+               $(subst .y,_p.h,$(wildcard $(dir ${SRC})*.y)),\
+               $(subst .y,_p.cxx,$(wildcard $(dir ${SRC})*.y)),\
+               $(TGT)\
+               ))\
   )\
 )
 

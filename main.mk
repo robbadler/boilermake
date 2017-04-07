@@ -29,9 +29,10 @@ DEFS += vco_aoh
 endif
 
 DISTCC_BIN = /project/dsm/cicd/tools/Distcc/aof/distcc-3.1/bin/distcc
-NO_DISTCC ?= 0
-ifeq ($(NO_DISTCC), 1)
+USE_DISTCC ?= 1
+ifeq ($(USE_DISTCC), 0)
 DISTCC_BIN =
+export CCACHE_PREFIX =
 endif
 
 CCACHE_BIN = /home/rhoughto/local/bin/ccache
