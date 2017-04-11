@@ -39,7 +39,9 @@ CCACHE_BIN = /home/rhoughto/local/bin/ccache
 
 PREFIX_CMD = $(CCACHE_BIN)
 USE_CCACHE ?= 1
-ifeq ($(USE_CCACHE), 0)
+ifeq ($(USE_CCACHE), 1)
+export CCACHE_BASEDIR=$(abspath ../../../../..)
+else
 PREFIX_CMD = $(DISTCC_BIN)
 endif
 
