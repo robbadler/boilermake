@@ -48,7 +48,7 @@ endif
 CXX = /project/dsm/cicd/tools/color_compile/bin/c++
 #CXX := /usr/bin/c++
 
-CXXFLAGS += -fPIC -msse2 -mfpmath=sse -Wno-deprecated -pthread -Wno-attributes
+CXXFLAGS += -fPIC -msse2 -mfpmath=sse -Wno-deprecated -pthread -Wno-attributes -pipe
 CXXFLAGS_DBG := -g -DDEBUG
 CXXFLAGS_OPT := -O3
 
@@ -75,6 +75,21 @@ ifeq ($(OPT), 1)
 CXXFLAGS += $(CXXFLAGS_OPT)
 endif
 
+IC_PDK_ONLY?=0
+ifeq ($(IC_PDK_ONLY),1)
+BOOST143=1
+DEFS+=BOOST_1_43
+# \
+-DGCC32_PORT \
+-MD \
+-Wall \
+-Wno-attributes \
+-Wno-deprecated \
+-Wno-reorder \
+-Wno-unknown-pragmas
+
+endif
+
 AR = /usr/bin/ar
 ARFLAGS := rc
 
@@ -86,9 +101,16 @@ SLIB_EXT  := .dll
 endif
 
 #CXXFLAGS += \
-				-Wall -Wsynth -fcheck-new -fno-strict-aliasing -fmessage-length=1024 \
-				-Wno-ctor-dtor-privacy -Wno-non-virtual-dtor -Wno-unused -fno-omit-frame-pointer \
-				-Wno-long-long
+				 -Wall\
+				 -Wno-ctor-dtor-privacy\
+				 -Wno-long-long\
+				 -Wno-non-virtual-dtor\
+				 -Wno-unused\
+				 -Wsynth\
+				 -fcheck-new\
+				 -fmessage-length=1024\
+				 -fno-omit-frame-pointer\
+				 -fno-strict-aliasing\
 
 #BUILD_DIR := /net/swallow/scratch1/iwa/osprey/nonRecursiveMake/boilermake/aoi
 

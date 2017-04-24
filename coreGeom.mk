@@ -1,4 +1,9 @@
+
+ifeq ($(BOOST_143),0)
 CORE_GEOM_HOME     := /project/dsm/cicd/icf_wg_server/cicd/cgeom/exports.v1-0_0-0-2_engr-$(VCO)/mgc_home
+else
+CORE_GEOM_HOME     := /wv/mgc/mgc_server/cicd/cgeom/exports.v1-0_0-3-2_engr-$(VCO)/mgc_home/
+endif
 
 CORE_GEOM_INCDIRS  := $(CORE_GEOM_HOME)/shared/pkgs/cgeom_inhouse.$(VCO)/include
 CORE_GEOM_INCLUDES := -isystem$(CORE_GEOM_INCDIRS)
