@@ -1,5 +1,5 @@
 
-ifeq ($(BOOST_143),0)
+ifeq ($(BOOST143),0)
 CORE_GEOM_HOME     := /project/dsm/cicd/icf_wg_server/cicd/cgeom/exports.v1-0_0-0-2_engr-$(VCO)/mgc_home
 else
 CORE_GEOM_HOME     := /wv/mgc/mgc_server/cicd/cgeom/exports.v1-0_0-3-2_engr-$(VCO)/mgc_home/
