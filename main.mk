@@ -75,6 +75,7 @@ ifeq ($(OPT), 1)
 CXXFLAGS += $(CXXFLAGS_OPT)
 endif
 
+BOOST143 ?= 0
 IC_PDK_ONLY?=0
 ifeq ($(IC_PDK_ONLY),1)
 BOOST143=1
