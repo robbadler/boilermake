@@ -262,12 +262,12 @@ define ADD_TARGET_RULE
 #	     $$(strip $${${1}_LINKER} -o $$@ $${LDFLAGS} $${${1}_LDFLAGS} \
 #	        --whole-archive $${${1}_OBJS} --no-whole-archive $${LDLIBS} $${${1}_LDLIBS})
 	     $(Q)$$(strip $${${1}_LINKER} -o $$@ \
-	        $${LDFLAGS} $${CXXFLAGS} $${${1}_LDFLAGS} \
+	        $$(sort $${LDFLAGS} $${CXXFLAGS} $${${1}_LDFLAGS}) \
 	        -Wl,--whole-archive \
 	        $${${1}_OBJS} $${${1}_STATICLIBS} \
 	        -Wl,--no-whole-archive \
 	        $${LDLIBS} \
-	        $$(foreach PRE,$${${1}_PREREQS},$$(addprefix -L,$${$${PRE}_TGTDIR})))  $${${1}_LDLIBS}
+	        $$(sort $$(foreach PRE,$${${1}_PREREQS},$$(addprefix -L,$${$${PRE}_TGTDIR})))) $${${1}_LDLIBS}
 #		-Wl,--as-needed 
 	     $${${1}_POSTMAKE}
     endif
@@ -536,6 +536,7 @@ define INCLUDE_SUBMAKEFILE
         # target-specific variables for the objects based on any source
         # variables that were defined.
         $${TGT}_OBJS += $${OBJS}
+        # Add generated dependency files (with a .P extension?)
         $${TGT}_DEPS += $${OBJS:%.o=%.P}
         $${OBJS}: SRC_CFLAGS   := $${$${TGT}_CFLAGS} $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${$${TGT}_CXXFLAGS} $${SRC_CXXFLAGS}

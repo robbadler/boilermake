@@ -124,8 +124,9 @@ BUILD_DIR := build
 TARGET_DIR := $(addprefix ${ROOT}/,allLibs)
 EXPORT_DIR_BASE := $(MGC_HOME)/lib
 LDFLAGS := \
-           -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
-           -L$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
+           -Wl,-rpath=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
+           -Wl,-rpath-link=$(TARGET_DIR) \
+           -L$(TARGET_DIR) \
            -Wl,-rpath-link=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk_inhouse.$(VCO)/lib \
            -L$(MGC_HOME)/../exports/mgc_home/pkgs/pdk_inhouse.$(VCO)/lib \
 
