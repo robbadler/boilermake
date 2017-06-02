@@ -120,8 +120,10 @@ CWD := $(addsuffix /,$(shell pwd))
 
 BUILD_DIR := build
 #BUILD_DIR := $(addprefix ${CWD},${BUILD_DIR})
+MGC_HOME ?= $(abspath ${ROOT}/../aoi/Mgc_home)
 
 TARGET_DIR := $(addprefix ${ROOT}/,allLibs)
+
 EXPORT_DIR_BASE := $(MGC_HOME)/lib
 LDFLAGS := \
            -Wl,-rpath=$(MGC_HOME)/../exports/mgc_home/pkgs/pdk.$(VCO)/lib/pdk \
