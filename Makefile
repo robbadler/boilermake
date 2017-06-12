@@ -68,12 +68,8 @@ endef
 #
 #   USE WITH EVAL
 #
-define ADD_OBJECT_RULE
-${1}/%.o: $(join ${ROOT}/,${2})
-	$(Q)${3}
-endef
 #$(eval $(info 1=${1} 2=${2}))
-define ADD_OBJECT_RULE2
+define ADD_OBJECT_RULE
 ${1}/%.o: ${2}
 	$(Q)${3}
 endef
@@ -192,10 +188,10 @@ endef
 define EXPORT_FILE
 all: ${3}
 ${3}:${2}
+	-@mkdir -p $(dir ${3})
 	ln -fs ${2} ${3}
 
-${3}: |$(strip $(dir ${3}))
-
+clean: clean_${3}
 clean_${1}: clean_${3}
 .PHONY: clean_${3}
 clean_${3}:
@@ -735,7 +731,7 @@ $(foreach TGT,${ALL_TGTS},\
 $(foreach TGT,${ALL_TGTS},\
   $(foreach EXT,${C_SRC_EXTS},\
     $(foreach DIR,${${TGT}_SRCDIRS},\
-      $(eval $(call ADD_OBJECT_RULE2,${BUILD_DIR}/${TGT},\
+      $(eval $(call ADD_OBJECT_RULE,${BUILD_DIR}/${TGT},\
                                      $(addprefix ${DIR}/,$(strip ${EXT})),\
                                      $${COMPILE_C_CMDS})))))
 
@@ -743,7 +739,7 @@ $(foreach TGT,${ALL_TGTS},\
 $(foreach TGT,${ALL_TGTS},\
   $(foreach EXT,${CXX_SRC_EXTS},\
     $(foreach DIR,$(sort ${${TGT}_SRCDIRS}),\
-      $(eval $(call ADD_OBJECT_RULE2,${BUILD_DIR}/${TGT},\
+      $(eval $(call ADD_OBJECT_RULE,${BUILD_DIR}/${TGT},\
                                      $(addprefix ${DIR}/,$(strip ${EXT})),\
                                      $${COMPILE_CXX_CMDS})))))
 
