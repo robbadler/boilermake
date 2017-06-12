@@ -1,0 +1,181 @@
+{
+   <tcl_findExec_cond>
+   Memcheck:Cond
+   ...
+   fun:Tcl_FindExecutable
+   fun:main
+}
+{
+   <tcl_findExec_value8>
+   Memcheck:Value8
+   ...
+   fun:Tcl_FindExecutable
+   fun:main
+}
+{
+   <tcl_findExec_leak
+   Memcheck:Leak
+   ...
+   fun:Tcl_FindExecutable
+   fun:main
+}
+
+{
+   <tclOOInit_cond>
+   Memcheck:Cond
+   ...
+   fun:TclOOInit
+}
+
+{
+   <tcl_findExec_cond>
+   Memcheck:Cond
+   ...
+   fun:TclpFindExecutable
+   fun:main
+}
+{
+   <tcl_findExec_value8>
+   Memcheck:Value8
+   ...
+   fun:TclpFindExecutable
+   fun:main
+}
+{
+   <tcl_findExec_leak
+   Memcheck:Leak
+   ...
+   fun:TclpFindExecutable
+   fun:main
+}
+
+
+{
+   <tcl_create_interp_leak>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:Tcl_CreateInterp
+   ...
+}
+{
+   <tcl_create_interp_cond>
+   Memcheck:Cond
+   ...
+   fun:Tcl_CreateInterp
+   ...
+}
+{
+   <tcl_create_interp_Value8>
+   Memcheck:Value8
+   ...
+   fun:Tcl_CreateInterp
+   ...
+}
+{
+   <tcl_create_interp_Addr16>
+   Memcheck:Addr16
+   ...
+   fun:Tcl_CreateInterp
+   ...
+}
+{
+   <tcl_EvalEx_malloc_str>
+   Memcheck:Cond
+   fun:__strcmp_sse42
+   ...
+   fun:Tcl_EvalEx
+}
+
+{
+   <tclEvalEx_malloc_str>
+   Memcheck:Cond
+   fun:__strcmp_sse42
+   ...
+   fun:TclEvalEx
+}
+{
+   <tclEval_malloc_str>
+   Memcheck:Cond
+   fun:__strcmp_sse42
+   ...
+   fun:TclEvalEx
+   fun:Tcl_Eval
+}
+{
+   <Tcl_Eval_malloc_str2>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   fun:Tcl_Eval
+}
+
+{
+   <tclZLibInit>
+   Memcheck:Cond
+   ...
+   fun:TclZlibInit
+   ...
+}
+{
+   <tclZLibInit>
+   Memcheck:Value8
+   ...
+   fun:TclZlibInit
+   ...
+}
+{
+   <Tcl_RegisterConfig>
+   Memcheck:Cond
+   ...
+   fun:Tcl_RegisterConfig
+}
+
+{
+   <Tcl_MakeFileChannel>
+   Memcheck:Cond
+   ...
+   fun:Tcl_CreateChannel
+   fun:Tcl_MakeFileChannel
+   ...
+}
+
+
+{
+   <Tcl_all_cond>
+   Memcheck:Cond
+   ...
+   fun:Tcl_*
+   fun:_ZN17TclInterpreterIfcC1Ev
+   fun:_ZN17TclInterpreterIfc4instEv
+}
+{
+   <Tcl_all_leak>
+   Memcheck:Leak
+   ...
+   fun:Tcl_*
+   fun:_ZN17TclInterpreterIfcC1Ev
+   fun:_ZN17TclInterpreterIfc4instEv
+}
+{
+   <Tcl_all_MainEx_leak>
+   Memcheck:Leak
+   ...
+   fun:Tcl_MainEx
+   ...
+}
+{
+   <Tcl_all_MainEx_cond>
+   Memcheck:Cond
+   ...
+   fun:Tcl_MainEx
+   ...
+}
+{
+   <TclCompileScript_cond>
+   Memcheck:Cond
+   ...
+   fun:TclCompileScript
+   ...
+}

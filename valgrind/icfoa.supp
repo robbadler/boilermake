@@ -1,0 +1,68 @@
+{
+   <icfoa_static_init_1>
+   Memcheck:Addr16
+   ...
+   obj:/wv/icfarch/icflow_wg_server/ic/icfoa/exports.v22-43_028-0-1_engr-aoi/mgc_home/pkgs/icfoa.aoi/OA/lib/linux_rhel50_gcc44x_64/opt/liboaBase.so
+}
+
+{
+   <icfoa_static_init_2>
+   Memcheck:Addr16
+   obj:/lib64/libc-2.12.so
+   fun:_ZN12OpenAccess_411oaBuildInfoC2ERKNS_8oaStringES3_S3_jjj
+   ...
+}
+
+{
+   <icfoa_tcl_val_ptr_init>
+   Memcheck:Leak
+   ...
+   fun:_Z41__static_initialization_and_destruction_0ii
+   obj:/wv/icfarch/icflow_wg_server/ic/icfoa/exports.v22-43_028-0-1_engr-aoi/mgc_home/pkgs/icfoa.aoi/OA/lib/linux_rhel50_gcc44x_64/opt/liboaTclEngine.so
+}
+
+{
+   <icfoa_tcl_init_Value>
+   Memcheck:Value8
+   ...
+   fun:Oa_Init
+   fun:Tcl_AppInit
+   fun:Tcl_MainEx
+}
+{
+   <icfoa_tcl_init_Addr16>
+   Memcheck:Addr16
+   ...
+   fun:Oa_Init
+   fun:Tcl_AppInit
+   fun:Tcl_MainEx
+}
+{
+   <icfoa_tcl_init_leak>
+   Memcheck:Leak
+   ...
+   fun:Oa_Init
+   fun:Tcl_AppInit
+   fun:Tcl_MainEx
+}
+
+{
+   <OpenAccess_oaInit_addr>
+   Memcheck:Addr16
+   ...
+   fun:_ZN12OpenAccess_412oaInitBaseDBEv
+}
+{
+   <OpenAccess_oaInit_cond>
+   Memcheck:Cond
+   ...
+   fun:_ZN12OpenAccess_412oaInitBaseDBEv
+}
+{
+   <OpenAccess_oaInit_leak>
+   Memcheck:Leak
+   ...
+   fun:_ZN12OpenAccess_412oaInitBaseDBEv
+}
+
+
