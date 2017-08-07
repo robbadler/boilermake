@@ -9,3 +9,5 @@ TCL_INCLUDES := -isystem$(TCL_INCDIRS)
 TCL_LIBDIR   := -Wl,-rpath-link=$(TCL_HOME)/pkgs/tcl86.$(VCO)/lib \
                               -L$(TCL_HOME)/pkgs/tcl86.$(VCO)/lib
 TCL_LIB      := -ltcl8.6
+
+TCL_RPATH := -Wl,-rpath=$(TCL_HOME)/pkgs/tcl86.$(VCO)/lib
