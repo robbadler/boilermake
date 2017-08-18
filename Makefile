@@ -251,7 +251,7 @@ define ADD_TARGET_RULE
                               $${${1}_MKFILES} $$(foreach PRE,$${${1}_PREREQS},\
                                                           $$(if $$(findstring $$(suffix $${PRE}),$${LIB_EXT}),\
                                                                 $$(addprefix $${$${PRE}_TGTDIR}/,$${PRE})))\
-                            | $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_TGTDIR}/,$${PRE}))
+                              $$(foreach PRE,$${${1}_PREREQS},$$(addprefix $${$${PRE}_TGTDIR}/,$${PRE}))
 # END RE-ENABLE        
 #        $${${1}_TGTDIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS} $${$${1}_MKFILES}
 	     @echo $${${1}_LINKER} $$(notdir $$@)...
